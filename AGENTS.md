@@ -1,16 +1,16 @@
 # AGENTS.md — priceil-web
 
-Frontend for the **PriceIL API** — a Next.js app that lets users search and compare supermarket product prices across Israeli chains.
+Frontend for the PriceIL API — a Next.js app for searching supermarket products and comparing prices across Israeli chains.
 
 ---
 
 ## Stack
 
-- **Next.js 15** — App Router, TypeScript, `src/` directory layout
-- **Tailwind CSS** — utility-first styling
-- **shadcn/ui** (Nova preset — Lucide icons + Geist font) — component library
-- **Lucide React** — icons
-- Plain `fetch` for API calls — no extra HTTP client library
+- Next.js 16 (App Router) + TypeScript
+- Tailwind CSS v4
+- shadcn/ui + Radix UI + Lucide icons
+- next-themes for dark/light mode
+- API access is centralized in `src/lib/api.ts` and currently uses plain `fetch`
 
 ---
 
@@ -19,53 +19,76 @@ Frontend for the **PriceIL API** — a Next.js app that lets users search and co
 ```
 src/
   app/
-    layout.tsx          ← root layout: navbar, dir="rtl", Geist font
-    page.tsx            ← home page: intro to the app and its purpose
+    layout.tsx          ← root layout: navbar, dir="rtl", Rubik font
+    page.tsx            ← marketing/home page
     search/
-      page.tsx          ← search input → product list → price comparison table
+      page.tsx          ← basket-first search UX (debounced search, store selector, local basket)
     docs/
-      page.tsx          ← API docs: all available routes and how to use them
+      layout.tsx        ← docs shell + sidebar
+      page.tsx          ← API overview + limits
+      products/page.tsx ← products endpoints docs
+      stores/page.tsx   ← stores endpoints docs
+      basket/page.tsx   ← basket compare endpoint docs
   lib/
     api.ts              ← all fetch calls to the backend API
   components/
     navbar.tsx
+    theme-toggle.tsx
 ```
 
 ---
 
-## Environment
+## Environment / API base URL
+
+`src/lib/api.ts` resolves base URL in this order:
+
+1. `NEXT_PUBLIC_API_URL` (if provided)
+2. Dev fallback (`NODE_ENV=development`): `http://177.178.179.14:3000`
+3. Prod fallback: `https://api.priceil.com`
+
+Example local override:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://177.178.179.14:3000
 ```
-
-All API calls go through `src/lib/api.ts` using `process.env.NEXT_PUBLIC_API_URL` as the base URL.
 
 ---
 
 ## Backend API
 
-The backend is a NestJS REST API. All responses are wrapped:
+Backend is NestJS REST. Responses are wrapped:
 
 ```json
 { "success": true, "data": { ... }, "timestamp": "..." }
 ```
 
-On error:
+Error shape:
+
 ```json
 { "success": false, "statusCode": 404, "message": "...", "timestamp": "..." }
 ```
 
-### Key routes used by the frontend
+### Key routes used by this frontend
 
 | Route | Purpose |
 |-------|---------|
 | `GET /products?q=&page=&limit=` | Search products by name |
-| `GET /products/:barcode/prices` | Get a product + its price in every store, sorted cheapest first |
-| `GET /products/groups?q=` | Search product groups (same product, different barcodes across chains) |
-| `GET /products/groups/:id/prices/:storeId` | Cheapest price for a group at a specific store |
-| `GET /stores?city=&chain=` | List/filter stores |
-| `GET /stores/chains` | List all chains with store counts |
+| `GET /products/search?q=&storeId=&page=&limit=` | Search products inside a specific store |
+| `GET /products/:barcode/prices` | Product prices across stores |
+| `GET /products/:barcode/prices/:storeId` | Product price in specific store |
+| `GET /products/groups?q=&page=&limit=` | Search product groups |
+| `GET /products/groups/:id/prices/:storeId` | Cheapest group match in specific store |
+| `GET /stores?city=&chain=&page=&limit=` | List/filter stores |
+| `GET /stores/chains` | Chains summary |
+| `POST /basket/compare` | Basket comparison across stores |
+
+### Other available backend routes (not core FE flow yet)
+
+- `GET /stores/:id`
+- `GET /products/:barcode`
+- `GET /products/groups/:id`
+- `POST /importer/run` (ops/admin flow)
+- `GET /health`
 
 ### Rate limiting
 
@@ -74,44 +97,28 @@ On error:
 | Free (anonymous) | none | 20 req / 60 s |
 | Paid | `x-api-key: <key>` | 500 req / 60 s |
 
-The frontend currently uses the free tier. When user accounts are added, pass the user's API key via `x-api-key`.
-
----
-
-## Pages
-
-### Home (`/`)
-- Introduces the app and its purpose
-- Brief explanation of what PriceIL does (compare supermarket prices in Israel)
-- Links to the Search and Docs pages
-
-### Search (`/search`)
-Search flow has two steps:
-1. User types a product name → `GET /products?q=<input>` → show a list of matching products
-2. User clicks a product → `GET /products/:barcode/prices` → show a table of all stores with that product, sorted cheapest first
-
-The table columns are: store name, chain, city, price, last updated.
-
-### Docs (`/docs`)
-Documents all available API routes and how to use them. Render as a clean, readable page — not a raw markdown dump.
-
 ---
 
 ## RTL support
 
-The app is primarily in Hebrew. The root `<html>` element must have `dir="rtl"` and `lang="he"`. Use Tailwind's `rtl:` variants for directional styles where needed.
+App is primarily Hebrew. Root `<html>` must keep:
+
+- `dir="rtl"`
+- `lang="he"`
+
+Use directional-safe styles for RTL-aware UX.
 
 ---
 
 ## Coding conventions
 
-- All new pages go under `src/app/` following Next.js App Router conventions
-- All API calls are centralized in `src/lib/api.ts` — no inline `fetch` in components
-- Use shadcn/ui components first before writing custom ones
-- Keep pages simple — no unnecessary abstractions for a 3-page app
-- Do not add TanStack Query, axios, or other HTTP libraries — plain `fetch` is sufficient
-- Do not add auth libraries yet — that comes in a future phase
-- TypeScript strict mode is on — no `any` types
+- Keep new pages under `src/app/` (App Router conventions)
+- Keep API logic in `src/lib/api.ts` (no inline network calls in page components)
+- Prefer existing shadcn/ui primitives before custom components
+- Keep the app simple and readable; avoid unnecessary abstraction
+- Avoid introducing additional data-fetching libraries unless there is a clear need
+- No auth implementation in this phase
+- TypeScript strict mode: avoid `any`
 
 ---
 
@@ -119,4 +126,4 @@ The app is primarily in Hebrew. The root `<html>` element must have `dir="rtl"` 
 
 - User accounts (Clerk or NextAuth)
 - Paid API key purchase (Stripe)
-- Shopping basket / price comparison across a full shopping list using `/products/groups/:id/prices/:storeId`
+- Full shopping-list optimization UX using product groups + `/basket/compare`

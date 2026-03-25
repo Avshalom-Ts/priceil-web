@@ -1,4 +1,4 @@
-const BASE_URL = "https://api.priceil.com";
+const BASE_URL = "/backend-api";
 
 export interface Product {
   itemCode: string;
@@ -20,6 +20,8 @@ export interface Store {
   storeName: string;
   city: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
   chain: {
     chainId: string;
     chainName: string;
@@ -107,7 +109,7 @@ export async function getStores(
   city?: string,
   chain?: string,
 ): Promise<StoresResult> {
-  const params = new URLSearchParams({ limit: "100" });
+  const params = new URLSearchParams({ limit: "500" });
   if (city) params.set("city", city);
   if (chain) params.set("chain", chain);
   return apiFetch(`/stores?${params.toString()}`);

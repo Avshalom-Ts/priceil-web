@@ -39,7 +39,7 @@ export default function DocsLayout({
                             Base URL
                         </span>
                         <code className="break-all font-mono text-[11px]">
-                            https://api.priceil.co.il
+                            https://api.priceil.com
                         </code>
                     </div>
                 </div>
