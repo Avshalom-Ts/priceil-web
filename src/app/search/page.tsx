@@ -28,6 +28,7 @@ import {
   getProductPriceInStore,
   type Product,
   type Store,
+  getCurrentCity,
 } from "@/lib/api";
 
 const BASKET_KEY = "priceil_basket";
@@ -42,6 +43,7 @@ interface BasketItem {
 interface UserLocation {
   latitude: number;
   longitude: number;
+  city: string;
 }
 
 interface StoreWithDistance extends Store {
@@ -117,11 +119,16 @@ export default function SearchPage() {
     setLocationError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
+        const city = await getCurrentCity(pos.coords.latitude, pos.coords.longitude).catch(() => "");
         setUserLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
+          city,
         });
+        getStores(city || undefined)
+          .then((res) => setStores(res.items))
+          .catch(() => { });
         setLocating(false);
       },
       () => {
@@ -141,7 +148,7 @@ export default function SearchPage() {
   useEffect(() => {
     getStores()
       .then((res) => setStores(res.items))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Try to get user location on first load (can fail silently)
@@ -184,6 +191,8 @@ export default function SearchPage() {
         ),
       };
     });
+
+
 
     withDistance.sort((a, b) => {
       const ad = a.distanceKm;
@@ -363,25 +372,6 @@ export default function SearchPage() {
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto pb-36">
         <div className="mx-auto max-w-2xl px-4 pt-8">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <LocateFixed className="size-3" />
-              {userLocation
-                ? "חנויות ממוינות לפי מרחק"
-                : locationError
-                  ? locationError
-                  : "מיקום לא זמין"}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={requestUserLocation}
-              disabled={locating}
-            >
-              {locating ? "מאתר..." : "רענן מיקום"}
-            </Button>
-          </div>
 
           {basket.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
@@ -402,7 +392,7 @@ export default function SearchPage() {
                   </span>
                 )}
               </div>
-
+              {/* Basket list */}
               <div className="overflow-hidden rounded-xl border border-border">
                 {basket.map((item, idx) => (
                   <div key={item.itemCode}>
@@ -497,50 +487,75 @@ export default function SearchPage() {
 
       {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-2 px-4 py-2">
-          {/* Total */}
-          <div className="flex shrink-0 flex-col items-end">
-            <span className="text-[10px] text-muted-foreground">סה״כ</span>
-            <span className="font-mono text-sm font-bold">₪{total.toFixed(2)}</span>
+        <div className="mx-auto px-4 py-2 flex justify-between items-center gap-3">
+
+          {/* Right side: store controls + location status */}
+          <div className="flex-1 flex flex-col gap-1 max-w-2xl">
+            <div className="flex">
+              <div className="flex flex-col gap-2">
+                {/* Location status */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <LocateFixed className="size-3" />
+                    {userLocation
+                      ? `ממוין לפי מרחק מ${userLocation.city}`
+                      : locationError
+                        ? locationError
+                        : "מיקום לא זמין"}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2.5 text-xs cursor-pointer"
+                    onClick={requestUserLocation}
+                    disabled={locating}
+                  >
+                    {locating ? "מאתר..." : "רענן"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Store list filter */}
+                  <Input
+                    value={storeFilter}
+                    onChange={(e) => setStoreFilter(e.target.value)}
+                    placeholder="סינון חנויות לפי שם או עיר..."
+                    className="h-8 w-28 text-xs min-w-max"
+                  />
+                  {/* Store selector */}
+                  <Select value={selectedStoreId} onValueChange={setSelectedStoreId} dir="rtl">
+                    <SelectTrigger className="h-8 w-44 shrink-0 text-xs">
+                      <SelectValue placeholder="בחר חנות..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredStores.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">
+                          לא נמצאו חנויות
+                        </div>
+                      ) : (
+                        filteredStores.map((store) => (
+                          <SelectItem key={store.id} value={String(store.id)}>
+                            <span className="text-xs">
+                              {store.chain.chainName} / {store.storeName}
+                              {store.distanceKm !== undefined
+                                ? ` · ${store.distanceKm.toFixed(1)} ק"מ`
+                                : ""}
+                            </span>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
 
-          <Separator orientation="vertical" className="h-8" />
-
-          {/* Store list filter */}
-          <Input
-            value={storeFilter}
-            onChange={(e) => setStoreFilter(e.target.value)}
-            placeholder="סינון חנויות..."
-            className="h-9 w-32 text-xs"
-          />
-
-          {/* Store selector */}
-          <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
-            <SelectTrigger className="h-9 w-52 shrink-0 text-xs">
-              <SelectValue placeholder="בחר חנות..." />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredStores.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">
-                  לא נמצאו חנויות
-                </div>
-              ) : (
-                filteredStores.map((store) => (
-                  <SelectItem key={store.id} value={String(store.id)}>
-                    <span className="text-xs">
-                      {store.chain.chainName} / {store.storeName}
-                      {store.distanceKm !== undefined
-                        ? ` · ${store.distanceKm.toFixed(1)} ק"מ`
-                        : ""}
-                    </span>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          {/* Search input */}
-          <div className="relative min-w-48 flex-1">
+          {/* Middle: search input */}
+          <div className="relative min-w-0 max-w-3xl flex-1">
             <Search className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={inputRef}
@@ -563,6 +578,15 @@ export default function SearchPage() {
               </button>
             )}
           </div>
+
+          {/* Left side: total */}
+          <div className="flex-1">
+            <div className="flex shrink-0 flex-col items-start">
+              <span className="text-[10px] text-muted-foreground">סה״כ</span>
+              <span className="font-mono text-sm font-bold">₪{total.toFixed(2)}</span>
+            </div>
+          </div>
+
         </div>
       </div>
 

@@ -118,3 +118,30 @@ export async function getStores(
 export async function getChains(): Promise<StoreChain[]> {
   return apiFetch("/stores/chains");
 }
+
+/**
+ * Given latitude and longitude, returns the nearest city name using a reverse geocoding API.
+ * @param lat - The latitude of the location.
+ * @param lon - The longitude of the location.
+ * @returns The name of the nearest city.
+ * @throws If the geocoding API request fails or returns an error status.
+ * @example
+ * https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=31.960035&longitude=34.883198&localityLanguage=he
+ */
+export async function getCurrentCity(
+  lat: number,
+  lon: number,
+): Promise<string> {
+  const cityResult: Response = await fetch(
+    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=he`,
+  );
+  if (!cityResult.ok)
+    throw new Error(`Geocoding API error ${cityResult.status}`);
+  const cityJson = await cityResult.json();
+  return (
+    cityJson.city ||
+    cityJson.locality ||
+    cityJson.principalSubdivision ||
+    "Unknown location"
+  );
+}
