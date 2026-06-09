@@ -203,7 +203,16 @@ export default function ProductsDocsPage() {
           curl={`curl "https://api.priceil.com/products/7290000051352"`}
           success={`{
   "itemCode": "7290000051352",
-  "itemName": "Milk 3% 1L"
+  "itemName": "Milk 3% 1L",
+  "itemType": 1,
+  "manufacturerName": "Tnuva",
+  "manufactureCountry": "IL",
+  "manufacturerDescription": "Tnuva Cooperative",
+  "unitQty": "liter",
+  "quantity": "1.000",
+  "isWeighted": false,
+  "unitOfMeasure": "100ml",
+  "qtyInPackage": 1
 }`}
           errors={`404 Product <barcode> not found
 429 Too Many Requests`}
@@ -218,7 +227,19 @@ export default function ProductsDocsPage() {
           ]}
           curl={`curl "https://api.priceil.com/products/7290000051352/prices"`}
           success={`{
-  "product": { "itemCode": "7290000051352", "itemName": "Milk 3% 1L" },
+  "product": {
+    "itemCode": "7290000051352",
+    "itemName": "Milk 3% 1L",
+    "itemType": 1,
+    "manufacturerName": "Tnuva",
+    "manufactureCountry": "IL",
+    "manufacturerDescription": "Tnuva Cooperative",
+    "unitQty": "liter",
+    "quantity": "1.000",
+    "isWeighted": false,
+    "unitOfMeasure": "100ml",
+    "qtyInPackage": 1
+  },
   "prices": [
     {
       "price": "5.90",

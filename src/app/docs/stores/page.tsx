@@ -1,11 +1,10 @@
 function MethodBadge({ method }: { method: "GET" | "POST" }) {
   return (
     <span
-      className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-xs font-bold ${
-        method === "GET"
+      className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-xs font-bold ${method === "GET"
           ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
           : "bg-green-500/10 text-green-600 dark:text-green-400"
-      }`}
+        }`}
       dir="ltr"
     >
       {method}
@@ -140,9 +139,19 @@ export default function StoresDocsPage() {
   "items": [
     {
       "id": 12,
+      "chainId": "7290027600007",
+      "subchainId": "1",
+      "storeId": "5",
+      "subchainName": "Shufersal",
       "storeName": "Shufersal Deal",
-      "city": "Tel Aviv",
+      "storeType": 1,
       "address": "Dizengoff 50",
+      "city": "Tel Aviv",
+      "zipcode": "6100000",
+      "bikoretNo": 100,
+      "lastUpdateDate": "2026-03-20",
+      "latitude": "32.0853000",
+      "longitude": "34.7817600",
       "chain": {
         "chainId": "7290027600007",
         "chainName": "Shufersal"
@@ -189,9 +198,19 @@ export default function StoresDocsPage() {
           curl={`curl "https://api.priceil.com/stores/12"`}
           success={`{
   "id": 12,
+  "chainId": "7290027600007",
+  "subchainId": "1",
+  "storeId": "5",
+  "subchainName": "Shufersal",
   "storeName": "Shufersal Deal",
-  "city": "Tel Aviv",
+  "storeType": 1,
   "address": "Dizengoff 50",
+  "city": "Tel Aviv",
+  "zipcode": "6100000",
+  "bikoretNo": 100,
+  "lastUpdateDate": "2026-03-20",
+  "latitude": "32.0853000",
+  "longitude": "34.7817600",
   "chain": {
     "chainId": "7290027600007",
     "chainName": "Shufersal"
