@@ -23,7 +23,7 @@ export default function Home() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
             אנחנו אוספים, מנתחים ומפרסמים את נתוני המחירים ממאות סניפים ברחבי
-            הארץ — בהתאם לחוק שקיפות המחירים. חפשו מוצרים, השוו מחירים בין
+            הארץ — בהתאם ל<a href="https://www.gov.il/he/pages/cpfta_prices_regulations" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">חוק שקיפות המחירים</a>. חפשו מוצרים, השוו מחירים בין
             רשתות ומצאו את הסל בזול ביותר.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -150,20 +150,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
-        <p>
-          PriceIL &copy; {new Date().getFullYear()} — נתונים על פי{" "}
-          <span className="font-medium text-foreground">
-            חוק שקיפות מחירים בסופרמרקטים
-          </span>
-        </p>
-        <p className="mt-2">
-          <Link href="/docs" className="hover:text-foreground underline underline-offset-4 transition-colors">
-            תיעוד ה-API למפתחים
-          </Link>
-        </p>
-      </footer>
+
     </main>
   );
 }
