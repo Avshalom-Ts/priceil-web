@@ -5,7 +5,7 @@ const API_TARGET = (
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "development"
     ? "http://177.178.179.14:3000"
-    : "https://api.priceil.com")
+    : "https://api.priceil.dev")
 ).replace(/\/$/, "");
 
 const nextConfig: NextConfig = {

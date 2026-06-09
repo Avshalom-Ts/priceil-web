@@ -12,8 +12,11 @@ export function Footer() {
                     <Link href="/terms" className="hover:text-foreground transition-colors">
                         תנאי שימוש
                     </Link>
-                    <Link href="/docs" className="hover:text-foreground transition-colors">
+                    <Link href="/developers" className="hover:text-foreground transition-colors">
                         API למפתחים
+                    </Link>
+                    <Link href="/docs" className="hover:text-foreground transition-colors">
+                        תיעוד API
                     </Link>
                 </div>
                 {/* All Rights Reserved Section */}
