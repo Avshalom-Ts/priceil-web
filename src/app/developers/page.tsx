@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   Zap,
   ShoppingCart,
   Store,
@@ -12,20 +11,12 @@ import {
   RefreshCw,
   Building2,
   Book,
+  Globe,
+  Code2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiPlayground } from "@/components/api-playground";
-
-function CodeBlock({ children }: { children: string }) {
-  return (
-    <pre
-      dir="ltr"
-      className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-300"
-    >
-      {children}
-    </pre>
-  );
-}
+import { CodeBlock } from "@/components/code-block";
 
 export default function DevelopersPage() {
   return (
@@ -56,6 +47,29 @@ export default function DevelopersPage() {
           </div>
         </div>
       </header>
+
+      {/* Base URL */}
+      <section className="flex flex-col gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Globe className="size-4 text-primary" />
+            <h2 className="text-lg font-bold tracking-tight">כתובת הבסיס</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            כל נקודות הקצה מתחילות בכתובת הזאת.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex-1">
+            <CodeBlock className="text-sm">{`https://api.priceil.dev`}</CodeBlock>
+          </div>
+          <Button className="mt-2">
+            <Link href="https://api.priceil.dev" target="_blank" rel="noopener noreferrer">
+              פתח בטאב חדש לראות את הנתיבים האפשריים
+            </Link>
+          </Button>
+        </div>
+      </section>
 
       {/* What you can build */}
       <section className="flex flex-col gap-5">
@@ -110,6 +124,61 @@ export default function DevelopersPage() {
         </div>
       </section>
 
+      {/* Endpoints quick-reference */}
+      <section className="flex flex-col gap-5">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">נקודות קצה</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            רשימה מהירה של כל הנתיבים הזמינים. רוב הנתיבים תומכים בפרמטרים{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">page</code> ו-
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">limit</code>{" "}
+            לדפדוף בתוצאות.
+          </p>
+        </div>
+        <div dir="ltr" className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50 text-left">
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Method</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Path</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Description</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {([
+                { method: "GET", path: "/products?q=&page=&limit=", desc: "Search products by name" },
+                { method: "GET", path: "/products/:barcode", desc: "Get product by barcode" },
+                { method: "GET", path: "/products/:barcode/prices", desc: "Prices across all stores" },
+                { method: "GET", path: "/products/:barcode/prices/:storeId", desc: "Price in a specific store" },
+                { method: "GET", path: "/products/search?q=&storeId=&page=&limit=", desc: "Search products inside a store" },
+                { method: "GET", path: "/products/groups?q=&page=&limit=", desc: "Search product groups" },
+                { method: "GET", path: "/products/groups/:id", desc: "Get group with all member barcodes" },
+                { method: "GET", path: "/products/groups/:id/prices/:storeId", desc: "Cheapest group match in store" },
+                { method: "GET", path: "/stores?city=&chain=&page=&limit=", desc: "List / filter stores" },
+                { method: "GET", path: "/stores/chains", desc: "Chains summary" },
+                { method: "GET", path: "/stores/:id", desc: "Get store by ID" },
+                { method: "POST", path: "/basket/compare", desc: "Compare basket cost across stores" },
+              ] as { method: string; path: string; desc: string }[]).map((row) => (
+                <tr key={row.path} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-2.5">
+                    <span
+                      className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${row.method === "POST"
+                        ? "bg-orange-500/15 text-orange-400"
+                        : "bg-blue-500/15 text-blue-400"
+                        }`}
+                    >
+                      {row.method}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-zinc-300">{row.path}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       {/* Quick start / Playground */}
       <section className="flex flex-col gap-5">
         <div>
@@ -119,6 +188,39 @@ export default function DevelopersPage() {
           </p>
         </div>
         <ApiPlayground />
+      </section>
+
+      {/* Response format */}
+      <section className="flex flex-col gap-5">
+        <div className="flex items-start gap-2">
+          <Code2 className="size-4 mt-1 text-primary shrink-0" />
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">מבנה התשובה</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              כל תשובה עטופה במעטפת אחידה. שגיאות מוחזרות באותו מבנה עם{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">success: false</code>.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-1 flex-col gap-2">
+            <p className="text-xs font-medium text-green-400">תשובה תקינה</p>
+            <CodeBlock className="h-full">{`{
+  "success": true,
+  "data": { ... },
+  "timestamp": "2026-06-10T12:00:00.000Z"
+}`}</CodeBlock>
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <p className="text-xs font-medium text-red-400">שגיאה</p>
+            <CodeBlock className="h-full">{`{
+  "success": false,
+  "statusCode": 404,
+  "message": "Product not found",
+  "timestamp": "2026-06-10T12:00:00.000Z"
+}`}</CodeBlock>
+          </div>
+        </div>
       </section>
 
       {/* Rate limits */}
@@ -131,7 +233,7 @@ export default function DevelopersPage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Free tier */}
-          <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
             <div className="flex items-center gap-2">
               <Terminal className="size-4 text-muted-foreground" />
               <span className="font-semibold">ללא הרשמה</span>
@@ -150,7 +252,20 @@ export default function DevelopersPage() {
                 ללא אימות
               </li>
             </ul>
-            <CodeBlock>{`curl "https://api.priceil.com/stores"`}</CodeBlock>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-mono text-zinc-400">curl</p>
+              <CodeBlock>{`curl "https://api.priceil.dev/stores"`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">JavaScript</p>
+              <CodeBlock>{`const res = await fetch("https://api.priceil.dev/stores");
+const { data } = await res.json();`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">Python</p>
+              <CodeBlock>{`import httpx
+data = httpx.get("https://api.priceil.dev/stores").json()["data"]`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">Rust</p>
+              <CodeBlock>{`let data = reqwest::get("https://api.priceil.dev/stores")
+    .await?.json::<serde_json::Value>().await?;
+let data = &data["data"];`}</CodeBlock>
+            </div>
           </div>
 
           {/* API key tier */}
@@ -173,7 +288,30 @@ export default function DevelopersPage() {
                 שלחו את המפתח בכל בקשה
               </li>
             </ul>
-            <CodeBlock>{`curl -H "x-api-key: YOUR_KEY" "https://api.priceil.com/products?q=לחם"`}</CodeBlock>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-mono text-zinc-400">curl</p>
+              <CodeBlock>{`curl -H "x-api-key: YOUR_KEY" \
+  "https://api.priceil.dev/products?q=לחם"`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">JavaScript</p>
+              <CodeBlock>{`const res = await fetch(
+  "https://api.priceil.dev/products?q=לחם",
+  { headers: { "x-api-key": "YOUR_KEY" } }
+);
+const { data } = await res.json();`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">Python</p>
+              <CodeBlock>{`import httpx
+data = httpx.get(
+  "https://api.priceil.dev/products",
+  params={"q": "לחם"},
+  headers={"x-api-key": "YOUR_KEY"},
+).json()["data"]`}</CodeBlock>
+              <p className="text-xs font-mono text-zinc-400">Rust</p>
+              <CodeBlock>{`let data = reqwest::Client::new()
+    .get("https://api.priceil.dev/products?q=לחם")
+    .header("x-api-key", "YOUR_KEY")
+    .send().await?.json::<serde_json::Value>().await?;
+let data = &data["data"];`}</CodeBlock>
+            </div>
           </div>
         </div>
       </section>
@@ -188,7 +326,7 @@ export default function DevelopersPage() {
         <div className="flex flex-wrap gap-3 justify-center">
           <Button size="lg" className="gap-2">
             <Key className="size-3.5" />
-            <Link href="/signup">
+            <Link href="/sign-in">
               צור חשבון עכשיו
             </Link>
           </Button>
