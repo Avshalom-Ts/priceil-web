@@ -11,6 +11,7 @@ import {
   Lock,
   RefreshCw,
   Building2,
+  Book,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiPlayground } from "@/components/api-playground";
@@ -114,7 +115,7 @@ export default function DevelopersPage() {
         <div>
           <h2 className="text-xl font-bold tracking-tight">נסו בעצמכם</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            בחרו דוגמה, ערכו את הנתיב והפרמטרים ולחצו שלח — ללא הרשמה.
+            בחרו דוגמה, ערכו את הנתיב והפרמטרים ולחצו שלח.
           </p>
         </div>
         <ApiPlayground />
@@ -130,13 +131,10 @@ export default function DevelopersPage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Free tier */}
-          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5">
             <div className="flex items-center gap-2">
               <Terminal className="size-4 text-muted-foreground" />
-              <span className="font-semibold">חינמי</span>
-              <span className="mr-auto rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                ללא הרשמה
-              </span>
+              <span className="font-semibold">ללא הרשמה</span>
             </div>
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -159,10 +157,7 @@ export default function DevelopersPage() {
           <div className="flex flex-col gap-4 rounded-xl border border-primary/30 bg-primary/5 p-5 ring-1 ring-primary/20">
             <div className="flex items-center gap-2">
               <Key className="size-4 text-primary" />
-              <span className="font-semibold">עם מפתח API</span>
-              <span className="mr-auto rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                עם חשבון
-              </span>
+              <span className="font-semibold">אחרי הרשמה</span>
             </div>
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -178,91 +173,31 @@ export default function DevelopersPage() {
                 שלחו את המפתח בכל בקשה
               </li>
             </ul>
-            <CodeBlock>{`curl -H "x-api-key: YOUR_KEY" \\
-  "https://api.priceil.com/products?q=לחם"`}</CodeBlock>
+            <CodeBlock>{`curl -H "x-api-key: YOUR_KEY" "https://api.priceil.com/products?q=לחם"`}</CodeBlock>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          חריגה ממגבלת הקצב תחזיר HTTP{" "}
-          <code className="font-mono" dir="ltr">429 Too Many Requests</code>.
-          מומלץ ליישם exponential backoff בסביבות ייצור.
-        </p>
       </section>
 
       {/* Sign-up CTA */}
-      <section className="flex flex-col items-start gap-4 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-7">
-        <div className="flex items-center gap-2 text-primary">
-          <Key className="size-5" />
-          <span className="text-sm font-semibold">קבלו מפתח API</span>
-        </div>
-        <h3 className="text-xl font-bold tracking-tight">
-          צריכים יותר מ-20 בקשות לדקה?
-        </h3>
-        <p className="max-w-lg text-sm leading-relaxed text-muted-foreground">
-          צרו חשבון חינמי וקבלו מפתח API שמאפשר 500 בקשות לדקה.
-          מושלם לאפליקציות, בוטים וצינורות נתונים שזקוקים לקצב גבוה.
+      <section className="flex flex-col items-center gap-3 py-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          מגיעים ל-20 הבקשות מהר מדי?{" "}
+          <span className="text-foreground font-medium">חשבון חינמי נותן לכם 500 בקשות לדקה</span>{" "}
+          — מספיק לכל אפליקציה, בוט או סקריפט.
         </p>
-        <div className="flex flex-wrap gap-3">
-          <Button size="sm" className="gap-2" disabled>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button size="lg" className="gap-2">
             <Key className="size-3.5" />
-            יצירת חשבון — בקרוב
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/docs/products">
-              קראו את התיעוד קודם
+            <Link href="/signup">
+              צור חשבון עכשיו
             </Link>
           </Button>
-        </div>
-      </section>
-
-      {/* Endpoint categories */}
-      <section className="flex flex-col gap-5">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">תיעוד נקודות הקצה</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            העמיקו בתיעוד המלא לכל משאב.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              href: "/docs/products",
-              icon: <Package className="size-4 text-primary" />,
-              title: "מוצרים",
-              desc: "חיפוש מוצרים, מחירים לפי ברקוד, חיפוש בתוך חנות וקבוצות מוצרים.",
-              count: "8 routes",
-            },
-            {
-              href: "/docs/stores",
-              icon: <Store className="size-4 text-primary" />,
-              title: "חנויות",
-              desc: "רשימת חנויות וסינון לפי עיר או רשת, סיכומי רשתות ופרטי חנות בודדת.",
-              count: "3 routes",
-            },
-            {
-              href: "/docs/basket",
-              icon: <ShoppingCart className="size-4 text-primary" />,
-              title: "השוואת סל",
-              desc: "שלחו רשימת ברקודים או מזהי קבוצה וקבלו השוואה מדורגת בין חנויות.",
-              count: "1 route",
-            },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group flex flex-col gap-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-muted/30"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {item.icon}
-                  <h3 className="font-semibold">{item.title}</h3>
-                </div>
-                <ArrowLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
-              <span className="font-mono text-[11px] text-muted-foreground">{item.count}</span>
+          <Button size="lg" className="gap-2" variant="outline">
+            <Book className="size-3.5" />
+            <Link href="/docs">
+              שימוש ב - API
             </Link>
-          ))}
+          </Button>
         </div>
       </section>
 

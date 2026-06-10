@@ -123,7 +123,7 @@ export default function Home() {
             <Button asChild size="lg" className="gap-2 px-8">
               <Link href="/search">
                 <Search className="size-4" />
-                התחילו עכשיו — זה חינמי
+                התחילו עכשיו — זה בחינם
               </Link>
             </Button>
           </div>
