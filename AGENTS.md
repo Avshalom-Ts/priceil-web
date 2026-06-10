@@ -44,7 +44,7 @@ src/
 
 1. `NEXT_PUBLIC_API_URL` (if provided)
 2. Dev fallback (`NODE_ENV=development`): `http://177.178.179.14:3000`
-3. Prod fallback: `https://api.priceil.com`
+3. Prod fallback: `https://api.priceil.dev`
 
 Example local override:
 
