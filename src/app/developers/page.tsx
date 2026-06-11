@@ -15,6 +15,7 @@ import {
   Code2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoginButton } from "@/components/login-button";
 import { ApiPlayground } from "@/components/api-playground";
 import { CodeBlock } from "@/components/code-block";
 
@@ -324,12 +325,10 @@ let data = &data["data"];`}</CodeBlock>
           — מספיק לכל אפליקציה, בוט או סקריפט.
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
-          <Button size="lg" className="gap-2">
+          <LoginButton size="lg" className="gap-2">
             <Key className="size-3.5" />
-            <Link href="/sign-in">
-              צור חשבון עכשיו
-            </Link>
-          </Button>
+            צור חשבון עכשיו
+          </LoginButton>
           <Button size="lg" className="gap-2" variant="outline">
             <Book className="size-3.5" />
             <Link href="/docs">

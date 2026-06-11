@@ -2,13 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
-type LoginButtonProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
-    children?: ReactNode;
-};
+type SignInButtonProps = Omit<ComponentProps<typeof Button>, "onClick">;
 
-export function LoginButton({ children = "התחברות", ...props }: LoginButtonProps) {
+export function SignInButton({ children, ...props }: SignInButtonProps) {
     async function handleSignIn() {
         const supabase = createClient();
         await supabase.auth.signInWithOAuth({
