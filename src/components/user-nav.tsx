@@ -59,7 +59,7 @@ export function UserNav() {
 
     const isOnDevelopers = pathname.startsWith("/developers");
 
-    if (loading || !isOnDevelopers) return null;
+    if (loading || (!isOnDevelopers && !user)) return null;
 
 
     if (!user) {
