@@ -23,6 +23,8 @@
 
 ## Current Tier Rules
 
+These tier plans apply to signed-up users only.
+
 | Tier | Apps | Keys per app | Monthly requests |
 |------|------|---------------|------------------|
 | Free | 1 | 1 | 5,000 |
@@ -30,7 +32,7 @@
 | Premium | unlimited | unlimited | unlimited |
 
 - Monthly quota is per-user (shared across all apps/keys)
-- Anonymous users remain on 20 req/min, no monthly quota
+- Anonymous (unsigned) users remain on `20 req/min`, no monthly quota
 
 ## Remaining Work (not done yet)
 
