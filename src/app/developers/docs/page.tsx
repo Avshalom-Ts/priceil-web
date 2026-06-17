@@ -109,19 +109,19 @@ export default function DocsPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
-              href: "/docs/products",
+              href: "/developers/docs/products",
               title: "מוצרים",
               desc: "חיפוש מוצרים, מחירים לפי ברקוד, חיפוש בחנות וקבוצות מוצרים.",
               count: "8 routes",
             },
             {
-              href: "/docs/stores",
+              href: "/developers/docs/stores",
               title: "חנויות",
               desc: "רשימת חנויות, סינונים, שרשראות חנויות, וחנות בודדת.",
               count: "3 routes",
             },
             {
-              href: "/docs/basket",
+              href: "/developers/docs/basket",
               title: "סל קניות",
               desc: "השוואת סל לפי ברקודים ו/או groupIds בכל החנויות.",
               count: "1 route",

@@ -2,10 +2,10 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-    { href: "/docs", label: "סקירה כללית" },
-    { href: "/docs/products", label: "מוצרים" },
-    { href: "/docs/stores", label: "חנויות" },
-    { href: "/docs/basket", label: "סל קניות" },
+    { href: "/developers/docs", label: "סקירה כללית" },
+    { href: "/developers/docs/products", label: "מוצרים" },
+    { href: "/developers/docs/stores", label: "חנויות" },
+    { href: "/developers/docs/basket", label: "סל קניות" },
 ];
 
 export default function DocsLayout({

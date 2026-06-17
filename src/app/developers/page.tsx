@@ -38,7 +38,7 @@ export default async function DevelopersPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild size="sm" className="gap-2">
-              <Link href="/docs/products">
+              <Link href="/developers/docs/products">
                 <Terminal className="size-3.5" />
                 לנקודות הקצה
               </Link>
@@ -336,7 +336,7 @@ let data = &data["data"];`}</CodeBlock>
           )}
           <Button size="lg" className="gap-2" variant="outline">
             <Book className="size-3.5" />
-            <Link href="/docs">
+            <Link href="/developers/docs">
               שימוש ב - API
             </Link>
           </Button>
