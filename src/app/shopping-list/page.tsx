@@ -88,7 +88,7 @@ function haversineKm(
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function SearchPage() {
+export default function ShoppingListPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [searching, setSearching] = useState(false);
@@ -127,7 +127,7 @@ export default function SearchPage() {
           city,
         });
         getStores(city || undefined)
-          .then((res) => setStores(res.items))
+          .then((res) => setStores(res.items ?? []))
           .catch(() => { });
         setLocating(false);
       },
@@ -147,7 +147,7 @@ export default function SearchPage() {
   // Load stores
   useEffect(() => {
     getStores()
-      .then((res) => setStores(res.items))
+      .then((res) => setStores(res.items ?? []))
       .catch(() => { });
   }, []);
 
@@ -315,10 +315,10 @@ export default function SearchPage() {
     try {
       if (storeId) {
         const res = await searchProductsInStore(q, parseInt(storeId, 10));
-        setResults(res.items);
+        setResults([...(res.bestMatch ? [res.bestMatch] : []), ...(res.allOthers ?? [])]);
       } else {
         const res = await searchProducts(q);
-        setResults(res.items);
+        setResults([...(res.bestMatch ? [res.bestMatch] : []), ...(res.allOthers ?? [])]);
       }
     } catch {
       setResults([]);

@@ -20,8 +20,37 @@ import { ApiPlayground } from "@/components/api-playground";
 import { CodeBlock } from "@/components/code-block";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const SKIP_ROUTES = new Set(["GET /", "GET /health", "POST /importer/run"]);
+
+async function fetchApiRoutes(): Promise<{ method: string; path: string; desc: string }[]> {
+  const base = (
+    process.env.API_PROXY_TARGET ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api.priceil.dev"
+  ).replace(/\/$/, "");
+  try {
+    const res = await fetch(`${base}/`, { next: { revalidate: 3600 } });
+    const json = await res.json();
+    return (json?.data?.routes ?? [])
+      .filter((r: { route: string }) => !SKIP_ROUTES.has(r.route))
+      .map((r: { route: string; desc: string }) => {
+        const spaceIdx = r.route.indexOf(" ");
+        return {
+          method: r.route.slice(0, spaceIdx),
+          path: r.route.slice(spaceIdx + 1),
+          desc: r.desc,
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
 export default async function DevelopersPage() {
-  const supabase = await createSupabaseServerClient();
+  const [supabase, apiRoutes] = await Promise.all([
+    createSupabaseServerClient(),
+    fetchApiRoutes(),
+  ]);
   const { data: { user } } = await supabase.auth.getUser();
   return (
     <div className="flex flex-col gap-14 container mx-auto px-4 py-10 max-w-6xl">
@@ -38,13 +67,13 @@ export default async function DevelopersPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild size="sm" className="gap-2">
-              <Link href="/developers/docs/products">
+              <Link href="/developers/docs">
                 <Terminal className="size-3.5" />
-                לנקודות הקצה
+                השימוש ב - API
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="gap-2">
-              <Link href="/search">
+              <Link href="/shopping-list">
                 נסו את הדמו החי
               </Link>
             </Button>
@@ -149,21 +178,8 @@ export default async function DevelopersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {([
-                { method: "GET", path: "/products?q=&page=&limit=", desc: "Search products by name" },
-                { method: "GET", path: "/products/:barcode", desc: "Get product by barcode" },
-                { method: "GET", path: "/products/:barcode/prices", desc: "Prices across all stores" },
-                { method: "GET", path: "/products/:barcode/prices/:storeId", desc: "Price in a specific store" },
-                { method: "GET", path: "/products/search?q=&storeId=&page=&limit=", desc: "Search products inside a store" },
-                { method: "GET", path: "/products/groups?q=&page=&limit=", desc: "Search product groups" },
-                { method: "GET", path: "/products/groups/:id", desc: "Get group with all member barcodes" },
-                { method: "GET", path: "/products/groups/:id/prices/:storeId", desc: "Cheapest group match in store" },
-                { method: "GET", path: "/stores?city=&chain=&page=&limit=", desc: "List / filter stores" },
-                { method: "GET", path: "/stores/chains", desc: "Chains summary" },
-                { method: "GET", path: "/stores/:id", desc: "Get store by ID" },
-                { method: "POST", path: "/basket/compare", desc: "Compare basket cost across stores" },
-              ] as { method: string; path: string; desc: string }[]).map((row) => (
-                <tr key={row.path} className="hover:bg-muted/30 transition-colors">
+              {apiRoutes.map((row) => (
+                <tr key={row.method + row.path} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-2.5">
                     <span
                       className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${row.method === "POST"
@@ -337,7 +353,7 @@ let data = &data["data"];`}</CodeBlock>
           <Button size="lg" className="gap-2" variant="outline">
             <Book className="size-3.5" />
             <Link href="/developers/docs">
-              שימוש ב - API
+              השימוש ב - API
             </Link>
           </Button>
         </div>

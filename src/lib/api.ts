@@ -35,22 +35,27 @@ export interface StoreChain {
 }
 
 export interface SearchProductsResult {
-  items: Product[];
+  bestMatch: Product | null;
+  allOthers: Product[];
   total: number;
   page: number;
   limit: number;
 }
 
+export type SearchInStoreProduct = Product & {
+  price: string;
+  priceUpdateDate: string;
+  storeId: number;
+  storeName: string;
+  city: string;
+  address: string;
+  chain: string;
+  groupId: number | null;
+};
+
 export interface SearchInStoreResult {
-  items: (Product & {
-    price: string;
-    priceUpdateDate: string;
-    storeId: number;
-    storeName: string;
-    city: string;
-    address: string;
-    chain: string;
-  })[];
+  bestMatch: SearchInStoreProduct | null;
+  allOthers: SearchInStoreProduct[];
   total: number;
   page: number;
   limit: number;
@@ -88,7 +93,7 @@ export async function searchProductsInStore(
   limit = 20,
 ): Promise<SearchInStoreResult> {
   return apiFetch(
-    `/products/search?q=${encodeURIComponent(q)}&storeId=${storeId}&page=${page}&limit=${limit}`,
+    `/products/${storeId}/like?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`,
   );
 }
 

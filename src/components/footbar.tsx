@@ -16,7 +16,7 @@ export function Footer() {
                         API למפתחים
                     </Link>
                     <Link href="/developers/docs" className="hover:text-foreground transition-colors">
-                        שימוש ב - API
+                        השימוש ב - API
                     </Link>
                 </div>
                 {/* All Rights Reserved Section */}
