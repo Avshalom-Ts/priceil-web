@@ -85,7 +85,7 @@ export function UserNav() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/developers" className="w-full cursor-pointer">
-                        תיעוד API
+                        שימוש ב - API
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

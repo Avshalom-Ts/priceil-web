@@ -18,8 +18,11 @@ import { Button } from "@/components/ui/button";
 import { LoginButton } from "@/components/login-button";
 import { ApiPlayground } from "@/components/api-playground";
 import { CodeBlock } from "@/components/code-block";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function DevelopersPage() {
+export default async function DevelopersPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
   return (
     <div className="flex flex-col gap-14 container mx-auto px-4 py-10 max-w-6xl">
       {/* Hero */}
@@ -325,10 +328,12 @@ let data = &data["data"];`}</CodeBlock>
           — מספיק לכל אפליקציה, בוט או סקריפט.
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
-          <LoginButton size="lg" className="gap-2">
-            <Key className="size-3.5" />
-            צור חשבון עכשיו
-          </LoginButton>
+          {!user && (
+            <LoginButton size="lg" className="gap-2">
+              <Key className="size-3.5" />
+              צור חשבון עכשיו
+            </LoginButton>
+          )}
           <Button size="lg" className="gap-2" variant="outline">
             <Book className="size-3.5" />
             <Link href="/docs">
