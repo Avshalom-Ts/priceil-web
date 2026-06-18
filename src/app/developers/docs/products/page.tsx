@@ -1,358 +1,520 @@
-function MethodBadge({ method }: { method: "GET" | "POST" }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-xs font-bold ${
-        method === "GET"
-          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-          : "bg-green-500/10 text-green-600 dark:text-green-400"
-      }`}
-      dir="ltr"
-    >
-      {method}
-    </span>
-  );
-}
+import { CodeBlock } from "@/components/code-block";
+import { ShellCommand } from "@/components/shell-command";
+import { MethodBadge, FieldTable, ErrorTable } from "@/components/docs/endpoint-ui";
+import { ApiRequestBar } from "@/components/api-request-bar";
+import Link from "next/link";
 
-function CodeBlock({ children }: { children: string }) {
-  return (
-    <pre
-      dir="ltr"
-      className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-left font-mono text-xs leading-5 text-zinc-300"
-    >
-      {children}
-    </pre>
-  );
-}
-
-function EndpointCard({
-  method,
-  path,
-  summary,
-  params,
-  curl,
-  success,
-  errors,
-  notes,
-}: {
-  method: "GET" | "POST";
-  path: string;
-  summary: string;
-  params?: Array<{
-    name: string;
-    location: "query" | "path";
-    type: string;
-    required: boolean;
-    description: string;
-  }>;
-  curl: string;
-  success: string;
-  errors: string;
-  notes?: string;
-}) {
-  return (
-    <article className="flex flex-col gap-4 rounded-xl border border-border p-5">
-      <div className="flex flex-wrap items-center gap-2 text-left" dir="ltr">
-        <MethodBadge method={method} />
-        <code className="font-mono text-sm">{path}</code>
-      </div>
-
-      <p className="text-sm text-muted-foreground">{summary}</p>
-
-      {params && params.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40">
-              <tr>
-                <th className="px-3 py-2 text-right font-medium">שם</th>
-                <th className="px-3 py-2 text-right font-medium">מיקום</th>
-                <th className="px-3 py-2 text-right font-medium">סוג</th>
-                <th className="px-3 py-2 text-right font-medium">נדרש</th>
-                <th className="px-3 py-2 text-right font-medium">תיאור</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {params.map((p) => (
-                <tr key={`${path}-${p.name}`}>
-                  <td className="px-3 py-2 font-mono text-xs" dir="ltr">
-                    {p.name}
-                  </td>
-                  <td className="px-3 py-2 text-xs" dir="ltr">
-                    {p.location}
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs" dir="ltr">
-                    {p.type}
-                  </td>
-                  <td className="px-3 py-2 text-xs">{p.required ? "כן" : "לא"}</td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{p.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Curl
-          </p>
-          <CodeBlock>{curl}</CodeBlock>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Success (data)
-          </p>
-          <CodeBlock>{success}</CodeBlock>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Common errors
-          </p>
-          <CodeBlock>{errors}</CodeBlock>
-        </div>
-      </div>
-
-      {notes && (
-        <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-          {notes}
-        </p>
-      )}
-    </article>
-  );
-}
+const PRODUCT_FIELDS = [
+  { field: "itemCode", type: "string", description: "ברקוד המוצר (מזהה ייחודי)." },
+  { field: "itemName", type: "string", description: "שם המוצר." },
+  { field: "itemType", type: "number", description: "קוד סוג המוצר." },
+  { field: "manufacturerName", type: "string", description: "שם היצרן." },
+  { field: "manufactureCountry", type: "string", description: "ארץ ייצור." },
+  { field: "manufacturerDescription", type: "string", description: "תיאור היצרן." },
+  { field: "unitQty", type: "string", description: "תווית כמות יחידה." },
+  { field: "quantity", type: "string (decimal)", description: "כמות באריזה." },
+  { field: "isWeighted", type: "boolean", description: "האם המוצר נמכר לפי משקל." },
+  { field: "unitOfMeasure", type: "string", description: "יחידת מידה." },
+  { field: "qtyInPackage", type: "number", description: "יחידות באריזה." },
+];
 
 export default function ProductsDocsPage() {
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-12">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">מוצרים</h1>
+        <h1 className="text-3xl font-bold tracking-tight">נתיבי המוצרים</h1>
         <p className="text-sm text-muted-foreground">
-          כל נקודות הקצה של מוצרים וקבוצות מוצרים. בחיפושי טקסט מרובי מילים,
-          המערכת עובדת בלוגיקת AND (כל מילה חייבת להופיע בשם), כך שסדר מילים
-          שונה אמור להחזיר תוצאות שקולות.
+          נתיבים לחיפוש מוצרים, שליפת מחירים לפי ברקוד ושם, חיפוש בתוך סניף ספציפי,
+          וניהול קבוצות מוצרים. קבוצות מוצרים מאפשרות להתמודד עם הבדלי ברקוד בין רשתות
+          לאותו מוצר.
         </p>
       </header>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="border-b border-border pb-2 text-xl font-semibold">Products</h2>
+      {/* ── GET /products ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            חיפוש מוצרים בכל הרשתות לפי שם חופשי. המערכת מריצה חיפוש בשלושה
+            מעברים: התאמה מלאה לביטוי, כל המילים, לפחות מילה אחת — ומדרגת
+            לפי רלוונטיות. מחזיר bestMatch ורשימה מדורגת.
+          </p>
+          <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+            <p className="mb-1 font-semibold text-foreground">Query params</p>
+            כולם אופציונליים. ללא q מוחזרים כל המוצרים עם pagination.
+          </div>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products"
-          summary="חיפוש/דפדוף מוצרים עם pagination. אם q כולל כמה מילים, כל המילים נדרשות בשם המוצר."
-          params={[
-            { name: "q", location: "query", type: "string", required: false, description: "חיפוש חופשי בשם מוצר" },
-            { name: "page", location: "query", type: "number", required: false, description: "ברירת מחדל: 1" },
-            { name: "limit", location: "query", type: "number", required: false, description: "ברירת מחדל: 20" },
-          ]}
-          curl={`curl "https://api.priceil.com/products?q=milk&page=1&limit=10"`}
-          success={`{
-  "items": [
-    { "itemCode": "7290000051352", "itemName": "Milk 3% 1L" }
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">פרמטרים</h2>
+          <FieldTable
+            rows={[
+              { field: "q", type: "string", required: false, description: "חיפוש חופשי בשם מוצר." },
+              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products?q=חלב&limit=5"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products?q=חלב&limit=5" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
+  "bestMatch": {
+    "itemCode": "7290000123456",
+    "itemName": "חלב תנובה 1L",
+    "itemType": 1,
+    "manufacturerName": "תנובה",
+    "quantity": "1.000",
+    "isWeighted": false,
+    "unitOfMeasure": "100 מל"
+  },
+  "allOthers": [
+    { "itemCode": "7290000054321", "itemName": "חלב תנובה 3% 500ml", "..." : "..." }
   ],
   "total": 342,
   "page": 1,
-  "limit": 10
-}`}
-          errors={`400 Bad Request (invalid numeric query params)
-429 Too Many Requests
-500 Internal Server Error`}
-        />
+  "limit": 5
+}`}</CodeBlock>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/search"
-          summary="חיפוש מוצרים בתוך חנות ספציפית, כולל מחיר המוצר בחנות שנבחרה."
-          params={[
-            { name: "q", location: "query", type: "string", required: false, description: "חיפוש בשם מוצר בתוך החנות" },
-            { name: "storeId", location: "query", type: "number", required: true, description: "מזהה חנות פנימי" },
-            { name: "page", location: "query", type: "number", required: false, description: "ברירת מחדל: 1" },
-            { name: "limit", location: "query", type: "number", required: false, description: "ברירת מחדל: 20" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/search?q=milk&storeId=12&page=1&limit=10"`}
-          success={`{
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products" initialParams="q=חלב תנובה&limit=5" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שדות תגובה</h2>
+          <FieldTable rows={PRODUCT_FIELDS} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "400", meaning: "פרמטר page/limit לא תקין", action: "ולידציה בצד לקוח לפני שליחה." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff אקספוננציאלי." },
+            { status: "500", meaning: "שגיאת שרת", action: "נסו שוב מאוחר יותר." },
+          ]} />
+        </div>
+      </section>
+
+      {/* ── GET /products/search ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/search</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            חיפוש מוצרים בתוך סניף ספציפי. כל תוצאה כוללת את מחיר המוצר בסניף
+            שנבחר. storeId הוא פרמטר חובה.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">פרמטרים</h2>
+          <FieldTable
+            rows={[
+              { field: "q", type: "string", required: false, description: "חיפוש חופשי בשם מוצר." },
+              { field: "storeId", type: "number", required: true, description: "מזהה פנימי של הסניף (חובה)." },
+              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/search?q=חלב&storeId=12&limit=5"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/search?q=חלב&storeId=12&limit=5" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
   "items": [
     {
       "itemCode": "7290000051352",
-      "itemName": "Milk 3% 1L",
+      "itemName": "חלב תנובה 3% 1L",
       "price": "5.90",
       "priceUpdateDate": "2026-03-20T00:00:00.000Z",
       "storeId": 12,
-      "storeName": "Rami Levy",
-      "city": "Tel Aviv",
-      "address": "Herzl 1",
-      "chain": "Rami Levy"
+      "storeName": "רמי לוי",
+      "city": "תל אביב",
+      "address": "רחוב הרצל 1",
+      "chain": "רמי לוי שיווק השקמה"
     }
   ],
   "total": 15,
   "page": 1,
-  "limit": 10
-}`}
-          errors={`400 storeId is required and must be a number
-404 Store <id> not found
-429 Too Many Requests`}
-        />
+  "limit": 5
+}`}</CodeBlock>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/:barcode"
-          summary="שליפת מוצר יחיד לפי ברקוד (itemCode), ללא מחירים."
-          params={[
-            { name: "barcode", location: "path", type: "string", required: true, description: "Barcode / itemCode" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/7290000051352"`}
-          success={`{
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/search" initialParams="q=חלב תנובה&storeId=12&limit=5" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "400", meaning: "storeId חסר או לא תקין", action: "ודאו שstoreId מספרי ונשלח." },
+            { status: "404", meaning: "סניף לא נמצא", action: "בדקו שה-storeId קיים." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff." },
+          ]} />
+        </div>
+      </section>
+
+      {/* ── GET /products/:barcode ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/:barcode</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            שליפת מוצר יחיד לפי ברקוד (itemCode). מחזיר את פרטי המוצר בלבד,
+            ללא מחירים. לשליפת מחירים השתמשו ב-/products/:barcode/prices.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/7290000051352"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/7290000051352" | ConvertTo-Json` },
+            ]}
+          />
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
   "itemCode": "7290000051352",
-  "itemName": "Milk 3% 1L",
+  "itemName": "חלב תנובה 3% 1L",
   "itemType": 1,
-  "manufacturerName": "Tnuva",
+  "manufacturerName": "תנובה",
   "manufactureCountry": "IL",
-  "manufacturerDescription": "Tnuva Cooperative",
-  "unitQty": "liter",
+  "manufacturerDescription": "תנובה מרכז שיתופי",
+  "unitQty": "ליטר",
   "quantity": "1.000",
   "isWeighted": false,
-  "unitOfMeasure": "100ml",
+  "unitOfMeasure": "100 מל",
   "qtyInPackage": 1
-}`}
-          errors={`404 Product <barcode> not found
-429 Too Many Requests`}
-        />
+}`}</CodeBlock>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/:barcode/prices"
-          summary="מחזיר מוצר + כל המחירים הקיימים שלו בסניפים, ממויין מהזול ליקר."
-          params={[
-            { name: "barcode", location: "path", type: "string", required: true, description: "Barcode / itemCode" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/7290000051352/prices"`}
-          success={`{
-  "product": {
-    "itemCode": "7290000051352",
-    "itemName": "Milk 3% 1L",
-    "itemType": 1,
-    "manufacturerName": "Tnuva",
-    "manufactureCountry": "IL",
-    "manufacturerDescription": "Tnuva Cooperative",
-    "unitQty": "liter",
-    "quantity": "1.000",
-    "isWeighted": false,
-    "unitOfMeasure": "100ml",
-    "qtyInPackage": 1
-  },
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/7290000051352" initialParams="" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "404", meaning: "ברקוד לא נמצא", action: "בדקו את הברקוד." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff." },
+          ]} />
+        </div>
+      </section>
+
+      {/* ── GET /products/:barcode/prices ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/:barcode/prices</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            מחזיר מוצר עם מחיריו בכל החנויות שנושאות אותו, ממויין מהזול לאחרון.
+            זהו הנתיב המרכזי לבניית מסך השוואת מחירים.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/7290000051352/prices"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/7290000051352/prices" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
+  "product": { "itemCode": "7290000051352", "itemName": "חלב תנובה 3% 1L", "..." : "..." },
   "prices": [
     {
       "price": "5.90",
       "priceUpdateDate": "2026-03-20T00:00:00.000Z",
       "storeId": 12,
-      "storeName": "Rami Levy",
-      "city": "Tel Aviv",
-      "address": "Herzl 1",
-      "chain": "Rami Levy"
+      "storeName": "רמי לוי",
+      "city": "תל אביב",
+      "chain": "רמי לוי שיווק השקמה"
+    },
+    {
+      "price": "6.40",
+      "storeId": 34,
+      "storeName": "שופרסל דיל",
+      "city": "רמת גן",
+      "chain": "שופרסל"
     }
   ]
-}`}
-          errors={`404 Product <barcode> not found
-429 Too Many Requests`}
-        />
+}`}</CodeBlock>
+          <p className="text-xs text-muted-foreground">
+            prices ממויין לפי price עולה — הזול ביותר ראשון.
+          </p>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/:barcode/prices/:storeId"
-          summary="מחיר מוצר יחיד בסניף ספציפי."
-          params={[
-            { name: "barcode", location: "path", type: "string", required: true, description: "Barcode / itemCode" },
-            { name: "storeId", location: "path", type: "number", required: true, description: "Store internal id" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/7290000051352/prices/12"`}
-          success={`{
-  "price": "5.90",
-  "priceUpdateDate": "2026-03-20T00:00:00.000Z",
-  "storeId": 12,
-  "storeName": "Rami Levy",
-  "city": "Tel Aviv",
-  "address": "Herzl 1",
-  "chain": "Rami Levy"
-}`}
-          errors={`404 Product <barcode> not found
-404 Store <storeId> not found
-404 Product <barcode> not found in store <storeId>
-429 Too Many Requests`}
-        />
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/7290000051352/prices" initialParams="" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "404", meaning: "ברקוד לא נמצא", action: "בדקו את הברקוד." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff." },
+          ]} />
+        </div>
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="border-b border-border pb-2 text-xl font-semibold">Product groups</h2>
+      {/* ── GET /products/:barcode/prices/:storeId ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/:barcode/prices/:storeId</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            מחיר מוצר ספציפי בסניף ספציפי. מחזיר 404 גם אם הסניף קיים אבל לא
+            נושא את המוצר.
+          </p>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/groups"
-          summary="חיפוש קבוצות מוצרים (מוצרים שקולים בין רשתות עם ברקודים שונים). מוחזרות רק קבוצות שיש להן לפחות מוצר אחד מקושר בפועל."
-          params={[
-            { name: "q", location: "query", type: "string", required: false, description: "חיפוש בשם הקבוצה" },
-            { name: "page", location: "query", type: "number", required: false, description: "ברירת מחדל: 1" },
-            { name: "limit", location: "query", type: "number", required: false, description: "ברירת מחדל: 20" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/groups?q=milk&page=1&limit=20"`}
-          success={`{
-  "items": [{ "id": 42, "name": "Milk 3% 1L" }],
-  "total": 1,
-  "page": 1,
-  "limit": 20
-}`}
-          errors={`400 Bad Request (invalid page/limit)
-429 Too Many Requests`}
-        />
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/7290000051352/prices/12"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/7290000051352/prices/12" | ConvertTo-Json` },
+            ]}
+          />
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/products/groups/:id"
-          summary="שליפת קבוצה יחידה כולל כל הברקודים/מוצרים המשויכים אליה."
-          params={[
-            { name: "id", location: "path", type: "number", required: true, description: "Group id" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/groups/42"`}
-          success={`{
-  "id": 42,
-  "name": "Milk 3% 1L",
-  "products": [
-    { "itemCode": "7290000051352", "itemName": "Milk 3% 1L" },
-    { "itemCode": "7290000042015", "itemName": "Milk 3% 1L" }
-  ]
-}`}
-          errors={`404 Product group <id> not found
-429 Too Many Requests`}
-        />
-
-        <EndpointCard
-          method="GET"
-          path="/products/groups/:id/prices/:storeId"
-          summary="מחזיר את המחיר הזול ביותר הזמין לקבוצה בחנות נתונה (לפי ברקודים של הקבוצה, ובנפילה לפי שם)."
-          params={[
-            { name: "id", location: "path", type: "number", required: true, description: "Group id" },
-            { name: "storeId", location: "path", type: "number", required: true, description: "Store id" },
-          ]}
-          curl={`curl "https://api.priceil.com/products/groups/42/prices/12"`}
-          success={`{
-  "groupId": 42,
-  "groupName": "Milk 3% 1L",
-  "itemCode": "7290000042015",
-  "itemName": "Milk 3% 1L",
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
   "price": "5.90",
   "priceUpdateDate": "2026-03-20T00:00:00.000Z",
   "storeId": 12,
-  "storeName": "Rami Levy",
-  "city": "Tel Aviv",
-  "address": "Herzl 1",
-  "chain": "Rami Levy"
-}`}
-          errors={`404 Product group <id> not found
-404 Store <storeId> not found
-404 Group "<groupName>" not available at store <storeId>
-429 Too Many Requests`}
-          notes="נקודת קצה קריטית לבניית סל קניות חכם לפי groupId במקום ברקוד קשיח."
-        />
+  "storeName": "רמי לוי",
+  "city": "תל אביב",
+  "address": "רחוב הרצל 1",
+  "chain": "רמי לוי שיווק השקמה"
+}`}</CodeBlock>
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/7290000051352/prices/12" initialParams="" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "404", meaning: "ברקוד / סניף לא נמצא, או הסניף לא נושא מוצר זה", action: "הציגו fallback מתאים." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff." },
+          ]} />
+        </div>
+      </section>
+
+      {/* ── Product Groups ── */}
+      <section className="flex flex-col gap-4">
+        <div className="rounded-xl border border-border bg-muted/20 p-5">
+          <h2 className="mb-2 text-xl font-semibold">קבוצות מוצרים</h2>
+          <p className="text-sm text-muted-foreground">
+            קבוצות מנרמלות ברקודים שונים מרשתות שונות לאותו מוצר. כשבונים
+            רשימת קניות — עדיף לשמור groupId ולא ברקוד ספציפי, כי ה-API ימצא
+            את הברקוד הנכון לכל סניף בעצמו.
+          </p>
+        </div>
+      </section>
+
+      {/* ── GET /products/groups ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/groups</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            חיפוש קבוצות מוצרים לפי שם. כל קבוצה כוללת את הברקודים המשויכים
+            לה. מחזיר אותה מבנה bestMatch/allOthers כמו /products.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">פרמטרים</h2>
+          <FieldTable
+            rows={[
+              { field: "q", type: "string", required: false, description: "חיפוש בשם הקבוצה." },
+              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/groups?q=חלב תנובה&limit=5"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/groups?q=חלב תנובה&limit=5" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/groups" initialParams="q=חלב תנובה&limit=5" />
+        </div>
+      </section>
+
+      {/* ── GET /products/groups/:id/prices/:storeId ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/products/groups/:id/prices/:storeId</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            המחיר הזול ביותר לקבוצת מוצרים בסניף ספציפי. ה-API בוחר את הברקוד
+            הנכון שהסניף נושא מתוך כל הברקודים בקבוצה.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/products/groups/42/prices/12"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/products/groups/42/prices/12" | ConvertTo-Json` },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
+  "groupId": 42,
+  "groupName": "חלב תנובה 3% 1L",
+  "itemCode": "7290000042015",
+  "itemName": "חלב תנובה 3% 1L",
+  "price": "5.90",
+  "priceUpdateDate": "2026-03-20T00:00:00.000Z",
+  "storeId": 12,
+  "storeName": "רמי לוי",
+  "city": "תל אביב",
+  "chain": "רמי לוי שיווק השקמה"
+}`}</CodeBlock>
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/products/groups/42/prices/12" initialParams="" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שדות תגובה</h2>
+          <FieldTable rows={[
+            { field: "groupId", type: "number", description: "מזהה קבוצת המוצרים." },
+            { field: "groupName", type: "string", description: "שם הקבוצה המנורמל." },
+            { field: "itemCode", type: "string", description: "הברקוד הספציפי שהסניף נושא." },
+            { field: "itemName", type: "string", description: "שם המוצר כפי שמופיע ברשת." },
+            { field: "price", type: "string (decimal)", description: "המחיר הזמין בסניף בשקלים." },
+            { field: "priceUpdateDate", type: "timestamptz", description: "תאריך עדכון המחיר האחרון." },
+            { field: "storeId", type: "number", description: "מזהה פנימי של הסניף." },
+            { field: "storeName", type: "string", description: "שם הסניף." },
+            { field: "city", type: "string", description: "עיר הסניף." },
+            { field: "address", type: "string", description: "כתובת הסניף." },
+            { field: "chain", type: "string", description: "שם הרשת." },
+          ]} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable rows={[
+            { status: "404", meaning: "קבוצה / סניף לא נמצאו, או הסניף לא נושא אף ברקוד מהקבוצה", action: "הציגו fallback מתאים." },
+            { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff." },
+          ]} />
+        </div>
+      </section>
+
+      {/* ── Tips ── */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">טיפים לשימוש</h2>
+        <ul className="list-disc space-y-1.5 pr-5 text-sm leading-relaxed text-muted-foreground">
+          <li>
+            לחיפוש ראשוני בלי סניף — השתמשו ב-
+            <span className="font-mono mx-1" dir="ltr">/products?q=...</span>
+            לאיסוף ברקודים, ואז העבירו אותם ל-
+            <span className="font-mono mx-1" dir="ltr">/products/:barcode/prices</span>
+            לבניית השוואה.
+          </li>
+          <li>
+            לרשימות קניות — עדיף לשמור groupId ולא ברקוד, כי קבוצות עובדות על
+            פני כל הרשתות. השתמשו בנתיב{" "}
+            <span className="font-mono" dir="ltr">/products/groups/:id/prices/:storeId</span>
+            {" "}לקבלת מחיר מדויק לכל סניף.
+          </li>
+          <li>
+            isWeighted=true מציין מוצר שנמכר לפי משקל. מחירו יהיה ל-100 גרם
+            ולא ליחידה.
+          </li>
+          <li>
+            priceUpdateDate הוא תאריך העדכון האחרון שהרשת דיווחה לממשלה, לא
+            תאריך העדכון במסד הנתונים שלנו.
+          </li>
+          <li>
+            לשילוב עם סניפים: קראו ל-
+            <Link href="/developers/docs/stores" className="mx-1 text-primary hover:underline" dir="ltr">/stores</Link>
+            קודם לאיסוף storeId, ואז השתמשו בו בנתיבי המחיר.
+          </li>
+        </ul>
       </section>
     </div>
   );
 }
+

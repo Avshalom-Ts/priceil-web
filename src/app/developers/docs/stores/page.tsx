@@ -1,152 +1,79 @@
-function MethodBadge({ method }: { method: "GET" | "POST" }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-xs font-bold ${method === "GET"
-          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-          : "bg-green-500/10 text-green-600 dark:text-green-400"
-        }`}
-      dir="ltr"
-    >
-      {method}
-    </span>
-  );
-}
 
-function CodeBlock({ children }: { children: string }) {
-  return (
-    <pre
-      dir="ltr"
-      className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-left font-mono text-xs leading-5 text-zinc-300"
-    >
-      {children}
-    </pre>
-  );
-}
-
-function EndpointCard({
-  method,
-  path,
-  summary,
-  params,
-  curl,
-  success,
-  errors,
-}: {
-  method: "GET" | "POST";
-  path: string;
-  summary: string;
-  params?: Array<{
-    name: string;
-    location: "query" | "path";
-    type: string;
-    required: boolean;
-    description: string;
-  }>;
-  curl: string;
-  success: string;
-  errors: string;
-}) {
-  return (
-    <article className="flex flex-col gap-4 rounded-xl border border-border p-5">
-      <div className="flex flex-wrap items-center gap-2 text-left" dir="ltr">
-        <MethodBadge method={method} />
-        <code className="font-mono text-sm">{path}</code>
-      </div>
-
-      <p className="text-sm text-muted-foreground">{summary}</p>
-
-      {params && params.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40">
-              <tr>
-                <th className="px-3 py-2 text-right font-medium">שם</th>
-                <th className="px-3 py-2 text-right font-medium">מיקום</th>
-                <th className="px-3 py-2 text-right font-medium">סוג</th>
-                <th className="px-3 py-2 text-right font-medium">נדרש</th>
-                <th className="px-3 py-2 text-right font-medium">תיאור</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {params.map((p) => (
-                <tr key={`${path}-${p.name}`}>
-                  <td className="px-3 py-2 font-mono text-xs" dir="ltr">
-                    {p.name}
-                  </td>
-                  <td className="px-3 py-2 text-xs" dir="ltr">
-                    {p.location}
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs" dir="ltr">
-                    {p.type}
-                  </td>
-                  <td className="px-3 py-2 text-xs">{p.required ? "כן" : "לא"}</td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{p.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Curl
-          </p>
-          <CodeBlock>{curl}</CodeBlock>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Success (data)
-          </p>
-          <CodeBlock>{success}</CodeBlock>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Common errors
-          </p>
-          <CodeBlock>{errors}</CodeBlock>
-        </div>
-      </div>
-    </article>
-  );
-}
+import { CodeBlock } from "@/components/code-block";
+import { ShellCommand } from "@/components/shell-command";
+import { MethodBadge, FieldTable, ErrorTable } from "@/components/docs/endpoint-ui";
+import { ApiRequestBar } from "@/components/api-request-bar";
+import Link from "next/link";
 
 export default function StoresDocsPage() {
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-12">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">חנויות</h1>
+        <h1 className="text-3xl font-bold tracking-tight">נתיב הסניפים ברשתות במזון</h1>
         <p className="text-sm text-muted-foreground">
-          נקודות קצה למידע על סניפים ורשתות. אפשר לסנן לפי עיר ורשת, או לשלוף
-          חנות בודדת.
+          נתיבים לשליפת רשימת סניפים, סינון לפי עיר ורשת, ושליפת סניף בודד עם
+          פרטי הרשת שלו. לרשימת הרשתות עצמן ראו את{" "}
+          <Link href="/developers/docs/chains" className="text-primary hover:underline">
+            עמוד הרשתות
+          </Link>
+          .
         </p>
       </header>
 
-      <section className="flex flex-col gap-4">
-        <EndpointCard
-          method="GET"
-          path="/stores"
-          summary="רשימת חנויות עם pagination וסינון אופציונלי לפי city או chain."
-          params={[
-            { name: "city", location: "query", type: "string", required: false, description: "מסנן לפי city או storeName (ILIKE)" },
-            { name: "chain", location: "query", type: "string", required: false, description: "מסנן לפי chainName (ILIKE)" },
-            { name: "page", location: "query", type: "number", required: false, description: "ברירת מחדל: 1" },
-            { name: "limit", location: "query", type: "number", required: false, description: "ברירת מחדל: 20" },
-          ]}
-          curl={`curl "https://api.priceil.com/stores?city=tel%20aviv&chain=shufersal&page=1&limit=20"`}
-          success={`{
+      {/* ── GET /stores ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/stores</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            מחזיר רשימה מדורגת של סניפים. אפשר לסנן לפי עיר ו/או שם רשת.
+            כל סניף כולל אובייקט רשת מקונן.
+          </p>
+          <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+            <p className="mb-1 font-semibold text-foreground">Query params</p>
+            תומך ב-page ו-limit. ברירת מחדל: page=1, limit=20.
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">פרמטרים אפשריים</h2>
+          <FieldTable
+            rows={[
+              { field: "city", type: "string", required: false, description: "סינון לפי שם עיר או שם סניף (partial match)." },
+              { field: "chain", type: "string", required: false, description: "סינון לפי שם רשת (partial match)." },
+              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/stores?city=תל%20אביב&chain=שופרסל&limit=5"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/stores?city=תל אביב&chain=שופרסל&limit=5" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
   "items": [
     {
       "id": 12,
       "chainId": "7290027600007",
       "subchainId": "1",
       "storeId": "5",
-      "subchainName": "Shufersal",
-      "storeName": "Shufersal Deal",
+      "subchainName": "שופרסל",
+      "storeName": "שופרסל דיל",
       "storeType": 1,
-      "address": "Dizengoff 50",
-      "city": "Tel Aviv",
+      "address": "דיזנגוף 50",
+      "city": "תל אביב",
       "zipcode": "6100000",
       "bikoretNo": 100,
       "lastUpdateDate": "2026-03-20",
@@ -154,83 +81,161 @@ export default function StoresDocsPage() {
       "longitude": "34.7817600",
       "chain": {
         "chainId": "7290027600007",
-        "chainName": "Shufersal"
+        "chainName": "שופרסל"
       }
     }
   ],
   "total": 7,
   "page": 1,
-  "limit": 20
-}`}
-          errors={`400 Bad Request (invalid page/limit)
-429 Too Many Requests
-500 Internal Server Error`}
-        />
+  "limit": 5
+}`}</CodeBlock>
+        </div>
 
-        <EndpointCard
-          method="GET"
-          path="/stores/chains"
-          summary="רשימת כל הרשתות עם מספר הסניפים לכל רשת (storeCount)."
-          curl={`curl "https://api.priceil.com/stores/chains"`}
-          success={`[
-  {
-    "chainId": "7290027600007",
-    "chainName": "Shufersal",
-    "storeCount": 280
-  },
-  {
-    "chainId": "7290058140886",
-    "chainName": "Rami Levy",
-    "storeCount": 60
-  }
-]`}
-          errors={`429 Too Many Requests
-500 Internal Server Error`}
-        />
 
-        <EndpointCard
-          method="GET"
-          path="/stores/:id"
-          summary="שליפת חנות יחידה לפי מזהה פנימי, כולל פרטי רשת."
-          params={[
-            { name: "id", location: "path", type: "number", required: true, description: "Store internal id" },
-          ]}
-          curl={`curl "https://api.priceil.com/stores/12"`}
-          success={`{
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/stores" initialParams="limit=5" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שדות תגובה — Store</h2>
+          <FieldTable
+            rows={[
+              { field: "id", type: "number", description: "מזהה פנימי של הסניף במסד הנתונים." },
+              { field: "chainId", type: "string", description: "מזהה רשמי של הרשת." },
+              { field: "subchainId", type: "string", description: "מזהה תת-רשת." },
+              { field: "storeId", type: "string", description: "מזהה הסניף כפי שמדווח על-ידי הרשת." },
+              { field: "subchainName", type: "string", description: "שם תת-הרשת (לרוב שם הרשת הפנימי)." },
+              { field: "storeName", type: "string", description: "שם הסניף לתצוגה." },
+              { field: "storeType", type: "number", description: "סוג הסניף (קוד מספרי)." },
+              { field: "address", type: "string", description: "כתובת הסניף." },
+              { field: "city", type: "string", description: "עיר הסניף." },
+              { field: "zipcode", type: "string", description: "מיקוד." },
+              { field: "lastUpdateDate", type: "string (date)", description: "תאריך עדכון אחרון של נתוני הסניף." },
+              { field: "latitude", type: "string (decimal)", description: "קו רוחב גאוגרפי." },
+              { field: "longitude", type: "string (decimal)", description: "קו אורך גאוגרפי." },
+              { field: "chain.chainId", type: "string", description: "מזהה רשת (מקונן)." },
+              { field: "chain.chainName", type: "string", description: "שם רשת (מקונן)." },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable />
+        </div>
+
+        <div className="rounded-xl border border-border bg-muted/20 p-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="mb-1 font-semibold text-foreground">טיפ לשימוש</p>
+          הפרמטר city מסנן גם לפי שם סניף (storeName), לא רק לפי שם עיר.
+          מיון ברירת מחדל: לפי chainName ואז city. כדי לבנות תפריט סינון מלא, שלבו
+          קודם קריאה ל-{" "}
+          <Link href="/developers/docs/chains" className="text-primary hover:underline" dir="ltr">
+            /stores/chains
+          </Link>{" "}
+          לשליפת כל הרשתות.
+        </div>
+      </section>
+
+      {/* ── GET /stores/:id ── */}
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border p-5">
+          <div className="flex flex-wrap items-center gap-2" dir="ltr">
+            <MethodBadge method="GET" />
+            <code className="font-mono text-sm">/stores/:id</code>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            שליפת סניף יחיד לפי המזהה הפנימי שלו, כולל פרטי הרשת המקוננת.
+            השתמשו בנתיב הזה כשאתם כבר מחזיקים storeId מתוצאת חיפוש קודמת.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+              <p className="mb-1 font-semibold text-foreground">Path param</p>
+              <span dir="ltr">id</span> — המזהה הפנימי של הסניף (מספר שלם).
+            </div>
+            <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+              <p className="mb-1 font-semibold text-foreground">אין Query params</p>
+              הנתיב לא תומך בפרמטרים נוספים.
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת בקשה</h2>
+          <ShellCommand
+            tabs={[
+              { label: "Linux / macOS", command: `curl "https://api.priceil.dev/stores/12"` },
+              { label: "Windows (PowerShell)", command: `Invoke-RestMethod -Uri "https://api.priceil.dev/stores/12" | ConvertTo-Json -Depth 10` },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">דוגמת תשובה (data)</h2>
+          <CodeBlock>{`{
   "id": 12,
-  "chainId": "7290027600007",
+  "chainId": "7290058140886",
   "subchainId": "1",
   "storeId": "5",
-  "subchainName": "Shufersal",
-  "storeName": "Shufersal Deal",
+  "subchainName": "רמי לוי",
+  "storeName": "רמי לוי תל אביב",
   "storeType": 1,
-  "address": "Dizengoff 50",
-  "city": "Tel Aviv",
+  "address": "רחוב הרצל 1",
+  "city": "תל אביב",
   "zipcode": "6100000",
   "bikoretNo": 100,
   "lastUpdateDate": "2026-03-20",
   "latitude": "32.0853000",
   "longitude": "34.7817600",
   "chain": {
-    "chainId": "7290027600007",
-    "chainName": "Shufersal"
+    "chainId": "7290058140886",
+    "chainName": "רמי לוי שיווק השקמה"
   }
-}`}
-          errors={`404 Store <id> not found
-429 Too Many Requests`}
-        />
+}`}</CodeBlock>
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">נסו בעצמכם</h2>
+          <ApiRequestBar initialPath="/stores/12" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">שגיאות נפוצות</h2>
+          <ErrorTable
+            rows={[
+              { status: "404", meaning: "סניף לא נמצא", action: "הציגו הודעה מתאימה למשתמש." },
+              { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff אקספוננציאלי." },
+            ]}
+          />
+        </div>
       </section>
 
-      <section className="rounded-xl border border-border bg-muted/20 p-5">
-        <h2 className="mb-2 text-sm font-semibold">הערות שימוש</h2>
-        <ul className="list-disc space-y-1 pr-5 text-xs leading-relaxed text-muted-foreground">
-          <li>מיון שרת ברירת מחדל: לפי chainName ואז city.</li>
+      {/* ── Usage tips ── */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">טיפים לשימוש</h2>
+        <ul className="list-disc space-y-1.5 pr-5 text-sm leading-relaxed text-muted-foreground">
           <li>
-            פרמטר city מסנן גם לפי שם סניף (storeName), לא רק לפי שם עיר.
+            לבניית חיפוש חנויות מלא: קראו תחילה ל-
+            <Link href="/developers/docs/chains" className="mx-1 text-primary hover:underline" dir="ltr">/stores/chains</Link>
+            לשליפת רשימת הרשתות, ואז השתמשו ב-chainName כפרמטר לסינון.
           </li>
           <li>
-            כל התגובות בפועל עטופות במעטפת success/data/timestamp כפי שמפורט בדף
-            הסקירה הראשי.
+            שמרו את ה-id (המזהה הפנימי) של הסניף — זהו הערך שתשתמשו בו
+            בנתיבי מוצרים כמו{" "}
+            <span className="font-mono" dir="ltr">/products/search?storeId=...</span>.
+          </li>
+          <li>
+            latitude ו-longitude הם מחרוזות עשרוניות. המירו ל-float לפני חישוב
+            מרחקים.
+          </li>
+          <li>
+            הנתיב <span className="font-mono" dir="ltr">/stores</span> מסנן עם
+            ILIKE — חיפוש חלקי שאינו תלוי רישיות. אין צורך בהתאמה מלאה לשם.
+          </li>
+          <li>
+            lastUpdateDate מעדכן לפי התאריך האחרון שבו הרשת דיווחה על עדכון
+            לסניף, לא תאריך עדכון מחירים.
           </li>
         </ul>
       </section>
