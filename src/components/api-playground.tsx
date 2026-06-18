@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Play, Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ShellCommand } from "@/components/shell-command";
 
 const API_DISPLAY_BASE = "https://api.priceil.dev";
 
 const EXAMPLES = [
     { label: "חיפוש מוצר", path: "/products", params: "q=חלב&limit=5" },
-    { label: "רשימת חנויות", path: "/stores", params: "limit=5" },
-    { label: "רשתות חנויות", path: "/stores/chains", params: "" },
+    { label: "סניף ברשת", path: "/stores", params: "limit=5" },
+    { label: "שם רשת", path: "/stores/chains", params: "" },
     { label: "מחירי ברקוד", path: "/products/7290000000001/prices", params: "" },
 ];
 
@@ -21,17 +22,7 @@ export function ApiPlayground() {
     const [response, setResponse] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [httpStatus, setHttpStatus] = useState<number | null>(null);
-    const [shellTab, setShellTab] = useState<"curl" | "powershell">("curl");
-    const [copied, setCopied] = useState(false);
     const [copiedResponse, setCopiedResponse] = useState(false);
-
-    function copyToClipboard() {
-        const text = shellTab === "curl" ? curlCmd : powershellCmd;
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    }
 
     function copyResponse() {
         if (!response) return;
@@ -182,45 +173,12 @@ export function ApiPlayground() {
             )}
 
             {/* Shell commands */}
-            <div className="flex flex-col gap-0">
-                <div className="flex justify-between items-center ">
-                    <button
-                        onClick={copyToClipboard}
-                        className="flex gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
-                        title="העתק"
-                    >
-                        {copied ? (
-                            <><Check className="size-3 text-green-500" /> הועתק</>
-                        ) : (
-                            <><Copy className="size-3" /> העתק</>
-                        )}
-                    </button>
-
-                    <div className="flex items-center gap-1 border-b border-border" dir="ltr">
-                        {(["curl", "powershell"] as const).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setShellTab(tab)}
-                                className={cn(
-                                    "-mb-px border-b-2 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
-                                    shellTab === tab
-                                        ? "border-primary text-foreground"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                {tab === "curl" ? "Linux / macOS" : "Windows (PowerShell)"}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <pre
-                    dir="ltr"
-                    suppressHydrationWarning
-                    className="overflow-x-auto rounded-b-xl rounded-t-none border border-t-0 border-zinc-800 bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-300"
-                >
-                    {shellTab === "curl" ? curlCmd : powershellCmd}
-                </pre>
-            </div>
+            <ShellCommand
+                tabs={[
+                    { label: "Linux / macOS", command: curlCmd },
+                    { label: "Windows (PowerShell)", command: powershellCmd },
+                ]}
+            />
 
         </div>
     );

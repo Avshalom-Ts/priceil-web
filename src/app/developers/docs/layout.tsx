@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
     { href: "/developers/docs", label: "סקירה כללית" },
+    { href: "/developers/docs/chains", label: "רשתות" },
+    { href: "/developers/docs/stores", label: "סניפים" },
     { href: "/developers/docs/products", label: "מוצרים" },
-    { href: "/developers/docs/stores", label: "חנויות" },
     { href: "/developers/docs/basket", label: "סל קניות" },
 ];
 
@@ -34,14 +35,6 @@ export default function DocsLayout({
                             </Link>
                         ))}
                     </nav>
-                    <div className="mt-6 rounded-lg border border-border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
-                        <span className="mb-1 block font-semibold text-foreground">
-                            Base URL
-                        </span>
-                        <code className="break-all font-mono text-[11px]">
-                            https://api.priceil.com
-                        </code>
-                    </div>
                 </div>
             </aside>
 

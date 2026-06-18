@@ -18,6 +18,9 @@ export function Footer() {
                     <Link href="/developers/docs" className="hover:text-foreground transition-colors">
                         השימוש ב - API
                     </Link>
+                    <Link href="/contact" className="hover:text-foreground transition-colors">
+                        צור קשר
+                    </Link>
                 </div>
                 {/* All Rights Reserved Section */}
                 <div className="mt-4">

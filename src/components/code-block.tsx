@@ -15,10 +15,10 @@ export function CodeBlock({ children, className }: { children: string; className
     }
 
     return (
-        <div className={cn("relative group flex flex-col", className)}>
+        <div className="relative group flex flex-col">
             <pre
                 dir="ltr"
-                className="flex-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-300"
+                className={cn("flex-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-300", className)}
             >
                 {children}
             </pre>
