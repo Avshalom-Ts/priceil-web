@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
     { href: "/developers/docs", label: "סקירה כללית" },
-    { href: "/developers/docs/chains", label: "רשתות" },
-    { href: "/developers/docs/stores", label: "סניפים" },
+    { href: "/developers/docs/chains", label: "רשתות מזון" },
+    { href: "/developers/docs/stores", label: "סניפים ברשת" },
     { href: "/developers/docs/products", label: "מוצרים" },
     { href: "/developers/docs/basket", label: "סל קניות" },
 ];
@@ -19,9 +19,6 @@ export default function DocsLayout({
             {/* Sidebar */}
             <aside className="hidden w-52 shrink-0 md:block">
                 <div className="sticky top-20">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                        תוכן עניינים
-                    </p>
                     <nav className="flex flex-col gap-0.5">
                         {navItems.map(({ href, label }) => (
                             <Link
