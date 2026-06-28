@@ -54,8 +54,8 @@ export default function BasketDocsPage() {
           <h2 className="text-lg font-semibold">שדות בקשה</h2>
           <FieldTable
             rows={[
-              { field: "barcodes", type: "string[]", required: false, description: "רשימת ברקודים להשוואה בין סניפים." },
-              { field: "groupIds", type: "number[]", required: false, description: "קבוצות מוצרים (מ- /products/groups)." },
+              { field: "barcodes", type: "מערך מחרוזות", required: false, description: "רשימת ברקודים להשוואה בין סניפים." },
+              { field: "groupIds", type: "מערך מספרים", required: false, description: "קבוצות מוצרים (מ- /products/groups)." },
             ]}
           />
           <p className="text-xs text-muted-foreground">

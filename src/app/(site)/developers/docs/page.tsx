@@ -10,9 +10,9 @@ import { ShellCommand } from "@/components/shell-command";
 
 export default function DocsPage() {
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-6 sm:gap-10">
       <header className="flex flex-col gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">מדריך מפתחים לשימוש ב-API</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">מדריך מפתחים לשימוש ב-API</h1>
         <div className="rounded-2xl border border-border bg-card p-4">
           <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
             <div className="max-w-3xl flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -60,7 +60,7 @@ export default function DocsPage() {
           </p>
           <div className="space-y-3 rounded-xl border border-border p-4">
             {/* Base URL */}
-            <section className="flex justify-between gap-3">
+            <section className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
               <div>
                 <div className="flex items-center gap-2">
                   <Globe className="size-4 text-primary" />
@@ -70,7 +70,7 @@ export default function DocsPage() {
                   כל נקודות הקצה מתחילות בכתובת הזאת.
                 </p>
               </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button>
                   <Link href="https://api.priceil.dev" target="_blank" rel="noopener noreferrer">
                     פתח בטאב חדש לראות את הנתיבים האפשריים
@@ -150,7 +150,7 @@ export default function DocsPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">כללי בקשה מומלצים</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
@@ -196,7 +196,7 @@ export default function DocsPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">הרשמה והגבלת בקשות</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
@@ -247,7 +247,7 @@ export default function DocsPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">טיפול בשגיאות ויציבות האינטגרציה</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
