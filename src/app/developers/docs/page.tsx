@@ -236,6 +236,13 @@ export default function DocsPage() {
         <p className="text-xs text-muted-foreground">
           אם האפליקציה עוברת את המגבלה, תקבלו סטטוס 429. מומלץ ליישם retry עם backoff.
         </p>
+        <p className="text-base text-muted-foreground">
+          לפירוט התוכניות, מגבלות המכסה החודשית ואפשרויות השדרוג, ראו את{" "}
+          <Link href="/developers/plans" className="text-primary hover:underline font-bold">
+            עמוד התוכניות
+          </Link>
+          .
+        </p>
       </section>
 
       <section className="flex flex-col gap-4">

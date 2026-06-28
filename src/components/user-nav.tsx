@@ -61,7 +61,7 @@ export function UserNav() {
 
     if (loading || (!isOnDevelopers && !user)) return null;
 
-
+    // If the user is not logged in, show the login button. Otherwise, show the user menu with account and logout options.
     if (!user) {
         return <LoginButton variant="outline" size="sm" />;
     }

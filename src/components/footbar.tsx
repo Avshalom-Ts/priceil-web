@@ -5,7 +5,7 @@ export function Footer() {
         <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
             <div className="flex justify-between max-w-4xl mx-auto">
                 {/* Links Section */}
-                <div className="flex items-start justify-center gap-4">
+                <div className="flex items-start justify-between gap-4 max-w-1/3 flex-wrap">
                     <Link href="/privacy" className="hover:text-foreground transition-colors">
                         חוק הפרטיות
                     </Link>
@@ -18,22 +18,25 @@ export function Footer() {
                     <Link href="/developers/docs" className="hover:text-foreground transition-colors">
                         השימוש ב - API
                     </Link>
+                    <Link href="/developers/plans" className="hover:text-foreground transition-colors">
+                        תוכניות ומחירים
+                    </Link>
                     <Link href="/contact" className="hover:text-foreground transition-colors">
                         צור קשר
                     </Link>
                 </div>
                 {/* All Rights Reserved Section */}
-                <div className="mt-4">
+                {/* Left side - logo */}
+                <div className="flex flex-col items-end justify-between">
+                    <Link href="/" className="flex items-center gap-2 justify-center">
+                        <span className="text-xl font-bold tracking-tight">PriceIL</span>
+                    </Link>
+                    {/* <div className="mt-4"> */}
                     <p>
                         כל הזכויות שמורות ל-
                         PriceIL &copy; {new Date().getFullYear()}
                     </p>
-                </div>
-                {/* Left side - logo */}
-                <div className="flex items-start justify-start">
-                    <Link href="/" className="flex items-center gap-2 justify-center">
-                        <span className="text-xl font-bold tracking-tight">PriceIL</span>
-                    </Link>
+                    {/* </div> */}
                 </div>
             </div>
         </footer>
