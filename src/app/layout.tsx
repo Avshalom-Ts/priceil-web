@@ -13,7 +13,10 @@ const rubik = Rubik({
 });
 
 export const metadata: Metadata = {
-  title: "PriceIL — השוואת מחירי סופרמרקט בישראל",
+  title: {
+    default: "PriceIL",
+    template: "%s | PriceIL",
+  },
   description:
     "פלטפורמה פתוחה לחיפוש והשוואת מחירי מוצרים בין רשתות הסופרמרקט בישראל.",
 };

@@ -19,6 +19,9 @@ import { LoginButton } from "@/components/login-button";
 import { ApiPlayground } from "@/components/api-playground";
 import { CodeBlock } from "@/components/code-block";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Metadata } from "next/dist/lib/metadata/types/metadata-interface";
+
+export const metadata: Metadata = { title: "מפתחים" }
 
 const SKIP_ROUTES = new Set(["GET /", "GET /health", "POST /importer/run"]);
 

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Metadata } from "next/dist/lib/metadata/types/metadata-interface";
+
+export const metadata: Metadata = { title: "מדריכים" }
 
 const navItems = [
     { href: "/developers/docs", label: "סקירה כללית" },

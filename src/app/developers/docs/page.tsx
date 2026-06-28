@@ -7,6 +7,7 @@ import { ApiPlayground } from "@/components/api-playground";
 import { ShellCommand } from "@/components/shell-command";
 
 
+
 export default function DocsPage() {
   return (
     <div className="flex flex-col gap-10">
