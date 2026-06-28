@@ -37,7 +37,6 @@ export default function RootLayout({
         <ThemeProvider>
           <Navbar />
           {children}
-          <Footer />
           <CookieBanner />
         </ThemeProvider>
       </body>

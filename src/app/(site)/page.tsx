@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/50 to-background px-4 py-20 text-center">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/50 to-background px-4 py-12 sm:py-20 text-center">
         <div className="mx-auto max-w-3xl">
           <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
             <Zap className="size-3 text-primary" />
@@ -134,17 +134,17 @@ export default function Home() {
       <section className="border-t border-border px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <div className="grid grid-cols-3 divide-x divide-x-reverse divide-border text-center">
-            <div className="px-6">
-              <p className="text-3xl font-extrabold tracking-tight text-primary">31</p>
-              <p className="mt-1 text-sm text-muted-foreground">רשתות סופרמרקט</p>
+            <div className="px-2 sm:px-6">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">31</p>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">רשתות סופרמרקט</p>
             </div>
-            <div className="px-6">
-              <p className="text-3xl font-extrabold tracking-tight text-primary">1,923</p>
-              <p className="mt-1 text-sm text-muted-foreground">סניפים ברחבי הארץ</p>
+            <div className="px-2 sm:px-6">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">1,923</p>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">סניפים ברחבי הארץ</p>
             </div>
-            <div className="px-6">
-              <p className="text-3xl font-extrabold tracking-tight text-primary">245,537</p>
-              <p className="mt-1 text-sm text-muted-foreground">מוצרים במאגר</p>
+            <div className="px-2 sm:px-6">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">245,537</p>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">מוצרים במאגר</p>
             </div>
           </div>
         </div>

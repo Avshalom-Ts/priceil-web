@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export function Footer() {
     return (
-        <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
-            <div className="flex justify-between max-w-4xl mx-auto">
+        <footer className="border-t border-border px-4 py-8 text-xs text-muted-foreground">
+            <div className="mx-auto max-w-4xl flex flex-col gap-8 sm:flex-row sm:justify-between">
                 {/* Links Section */}
-                <div className="flex items-start justify-between gap-4 max-w-1/3 flex-wrap">
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:justify-start">
                     <Link href="/privacy" className="hover:text-foreground transition-colors">
                         חוק הפרטיות
                     </Link>
@@ -25,18 +25,15 @@ export function Footer() {
                         צור קשר
                     </Link>
                 </div>
-                {/* All Rights Reserved Section */}
-                {/* Left side - logo */}
-                <div className="flex flex-col items-end justify-between">
-                    <Link href="/" className="flex items-center gap-2 justify-center">
+                {/* Logo + copyright */}
+                <div className="flex flex-col items-center gap-1 sm:items-end">
+                    <Link href="/" className="flex items-center gap-2">
                         <span className="text-xl font-bold tracking-tight">PriceIL</span>
                     </Link>
-                    {/* <div className="mt-4"> */}
                     <p>
                         כל הזכויות שמורות ל-
                         PriceIL &copy; {new Date().getFullYear()}
                     </p>
-                    {/* </div> */}
                 </div>
             </div>
         </footer>

@@ -370,7 +370,7 @@ export default function ShoppingListPage() {
   return (
     <div className="flex flex-1 flex-col">
       {/* Main content area */}
-      <div className="flex-1 overflow-y-auto pb-36">
+      <div className="flex-1 overflow-y-auto pb-44 sm:pb-28">
         <div className="mx-auto max-w-2xl px-4 pt-8">
 
           {basket.length === 0 ? (
@@ -436,7 +436,7 @@ export default function ShoppingListPage() {
 
       {/* Results popup */}
       {showResults && (
-        <div className="fixed bottom-28 left-0 right-0 z-40 mx-auto w-full max-w-2xl px-4">
+        <div className="fixed bottom-40 sm:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-2xl px-4">
           <div className="overflow-hidden rounded-xl border border-border bg-background shadow-xl">
             {searching ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -486,17 +486,17 @@ export default function ShoppingListPage() {
       )}
 
       {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto px-4 py-2 flex justify-between items-center gap-3">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+        <div className="mx-auto px-4 py-2 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3">
 
           {/* Right side: store controls + location status */}
-          <div className="flex-1 flex flex-col gap-1 max-w-2xl">
+          <div className="flex flex-col gap-1 sm:flex-1 sm:max-w-2xl">
             <div className="flex">
-              <div className="flex flex-col gap-2">
+              <div className="flex-1 sm:flex-0 flex flex-col gap-2">
                 {/* Location status */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <LocateFixed className="size-3" />
+                  <span className="flex items-center gap-1 min-w-0 truncate">
+                    <LocateFixed className="size-3 shrink-0" />
                     {userLocation
                       ? `ממוין לפי מרחק מ${userLocation.city}`
                       : locationError
@@ -520,11 +520,11 @@ export default function ShoppingListPage() {
                     value={storeFilter}
                     onChange={(e) => setStoreFilter(e.target.value)}
                     placeholder="סינון חנויות לפי שם או עיר..."
-                    className="h-8 w-28 text-xs min-w-max"
+                    className="h-8 w-20 shrink-0 text-xs sm:w-28 sm:min-w-max"
                   />
                   {/* Store selector */}
                   <Select value={selectedStoreId} onValueChange={setSelectedStoreId} dir="rtl">
-                    <SelectTrigger className="h-8 w-44 shrink-0 text-xs">
+                    <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-44 sm:flex-none">
                       <SelectValue placeholder="בחר חנות..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -580,10 +580,10 @@ export default function ShoppingListPage() {
           </div>
 
           {/* Left side: total */}
-          <div className="flex-1">
-            <div className="flex shrink-0 flex-col items-start">
-              <span className="text-[10px] text-muted-foreground">סה״כ</span>
-              <span className="font-mono text-sm font-bold">₪{total.toFixed(2)}</span>
+          <div className="shrink-0 sm:flex-1 flex sm:justify-start justify-center">
+            <div className="flex shrink-0 sm:flex-col gap-3 sm:gap-0 items-end sm:items-start">
+              <span className="text-sm text-muted-foreground">סה״כ</span>
+              <span className="font-mono text-base font-bold">₪{total.toFixed(2)}</span>
             </div>
           </div>
 
