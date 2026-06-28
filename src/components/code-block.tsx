@@ -15,7 +15,7 @@ export function CodeBlock({ children, className }: { children: string; className
     }
 
     return (
-        <div className="relative group flex flex-col">
+        <div className="relative group flex flex-col min-w-0">
             <pre
                 dir="ltr"
                 className={cn("flex-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-300", className)}

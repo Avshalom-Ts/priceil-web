@@ -56,14 +56,14 @@ export default async function DevelopersPage() {
   ]);
   const { data: { user } } = await supabase.auth.getUser();
   return (
-    <div className="flex flex-col gap-14 container mx-auto px-4 py-10 max-w-6xl">
+    <div className="flex flex-col gap-8 sm:gap-14 container mx-auto px-4 py-6 sm:py-10 max-w-6xl">
       {/* Hero */}
       <header className="flex items-center justify-center">
         <div className="flex flex-col items-center gap-5">
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
             השתמשו עם נתוני הסופרמרקטים בישראל
           </h1>
-          <p className="max-w-3xl text-base leading-relaxed text-center text-muted-foreground">
+          <p className="max-w-3xl text-sm leading-relaxed text-center text-muted-foreground sm:text-base">
             PriceIL חושפת נתוני מחירים בזמן אמת מכל רשתות הסופרמרקטים הגדולות בישראל
             דרך REST API פשוט. חפשו מוצרים, השוו מחירים בין חנויות, ובנו כלי אופטימיזציה לסל הקניות
             — ללא צורך בהרשמה כדי להתחיל.
@@ -115,7 +115,7 @@ export default async function DevelopersPage() {
             API אחד, נתוני מחירים אמיתיים, אפשרויות אין-סופיות.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               icon: <Package className="size-5 text-primary" />,
@@ -177,7 +177,7 @@ export default async function DevelopersPage() {
               <tr className="border-b border-border bg-muted/50 text-left">
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Method</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Path</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Description</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground min-w-60">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -256,7 +256,7 @@ export default async function DevelopersPage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Free tier */}
-          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 min-w-0">
             <div className="flex items-center gap-2">
               <Terminal className="size-4 text-muted-foreground" />
               <span className="font-semibold">ללא הרשמה</span>
@@ -292,7 +292,7 @@ let data = &data["data"];`}</CodeBlock>
           </div>
 
           {/* API key tier */}
-          <div className="flex flex-col gap-4 rounded-xl border border-primary/30 bg-primary/5 p-5 ring-1 ring-primary/20">
+          <div className="flex flex-col gap-4 rounded-xl border border-primary/30 bg-primary/5 p-5 ring-1 ring-primary/20 min-w-0">
             <div className="flex items-center gap-2">
               <Key className="size-4 text-primary" />
               <span className="font-semibold">אחרי הרשמה</span>
