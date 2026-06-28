@@ -2,13 +2,38 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 
 
+export function DocsSidebarNav({ navItems }: { navItems: { href: string; label: string }[] }) {
+    const pathname = usePathname();
+
+    return (
+        <nav className="flex flex-col gap-0.5">
+            {navItems.map(({ href, label }) => (
+                <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                        "rounded-md px-3 py-1.5 text-sm transition-colors",
+                        pathname === href
+                            ? "bg-muted font-medium text-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                >
+                    {label}
+                </Link>
+            ))}
+        </nav>
+    );
+}
+
 export function DocsMobileNav({ navItems }: { navItems: { href: string; label: string }[] }) {
     const [open, setOpen] = useState(false);
+    const pathname = usePathname();
 
     return (
         <div className="relative mb-4 md:hidden">
@@ -32,7 +57,10 @@ export function DocsMobileNav({ navItems }: { navItems: { href: string; label: s
                                     href={href}
                                     onClick={() => setOpen(false)}
                                     className={cn(
-                                        "rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                        "rounded-md px-3 py-2 text-sm transition-colors",
+                                        pathname === href
+                                            ? "bg-muted font-medium text-foreground"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                     )}
                                 >
                                     {label}
