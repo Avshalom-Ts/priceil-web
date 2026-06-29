@@ -88,6 +88,11 @@ export function UserNav() {
                         השימוש ב - API
                     </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/shopping-list" className="w-full cursor-pointer">
+                        רשימת קניות
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={handleSignOut}
