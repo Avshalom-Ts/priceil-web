@@ -51,6 +51,9 @@ export type SearchInStoreProduct = Product & {
   address: string;
   chain: string;
   groupId: number | null;
+  unitQty: string;
+  quantity: string;
+  isWeighted: boolean;
 };
 
 export interface SearchInStoreResult {

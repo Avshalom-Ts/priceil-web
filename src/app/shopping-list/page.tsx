@@ -8,6 +8,11 @@ import {
   Loader2,
   Store as StoreIcon,
   LocateFixed,
+  AlertTriangle,
+  Copy,
+  Check,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,12 +37,36 @@ import {
 } from "@/lib/api";
 
 const BASKET_KEY = "priceil_basket";
+const STORE_KEY = "priceil_selected_store";
+
+function loadSelectedStore(): string {
+  try {
+    return localStorage.getItem(STORE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveSelectedStore(storeId: string) {
+  try {
+    if (storeId) {
+      localStorage.setItem(STORE_KEY, storeId);
+    } else {
+      localStorage.removeItem(STORE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 interface BasketItem {
   itemCode: string;
   itemName: string;
+  qty: number;
   price?: string;
+  priceUpdateDate?: string;
   storeId?: number;
+  unitQty?: string;
 }
 
 interface UserLocation {
@@ -90,16 +119,19 @@ function haversineKm(
 
 export default function ShoppingListPage() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
+  const [results, setResults] = useState<Array<Product & { price?: string; priceUpdateDate?: string; unitQty?: string }>>([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
   const [stores, setStores] = useState<Store[]>([]);
   const [storeFilter, setStoreFilter] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
+  const [storeHydrated, setStoreHydrated] = useState(false);
 
   const [basket, setBasket] = useState<BasketItem[]>([]);
   const [loadingPrices, setLoadingPrices] = useState<Set<string>>(new Set());
+  const [replacingItemCode, setReplacingItemCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locating, setLocating] = useState(false);
@@ -139,9 +171,26 @@ export default function ShoppingListPage() {
     );
   }, []);
 
-  // Load basket from localStorage on mount
+  // Load basket and selected store from localStorage on mount.
+  // Pre-populate loadingPrices only for items that are missing a price for the
+  // saved store so items already priced don't flash a spinner.
   useEffect(() => {
-    setBasket(loadBasket());
+    const savedBasket = loadBasket();
+    const savedStoreId = loadSelectedStore();
+
+    if (savedStoreId && savedBasket.length) {
+      const savedStoreIdNum = parseInt(savedStoreId, 10);
+      const needsPrice = savedBasket
+        .filter((b) => !b.price || b.storeId !== savedStoreIdNum)
+        .map((b) => b.itemCode);
+      if (needsPrice.length) {
+        setLoadingPrices(new Set(needsPrice));
+      }
+    }
+
+    setBasket(savedBasket);
+    setSelectedStoreId(savedStoreId);
+    setStoreHydrated(true);
   }, []);
 
   // Load stores
@@ -243,6 +292,7 @@ export default function ShoppingListPage() {
         const cleared = currentBasket.map((b) => ({
           itemCode: b.itemCode,
           itemName: b.itemName,
+          qty: b.qty ?? 1,
         }));
         setBasket(cleared);
         saveBasket(cleared);
@@ -257,23 +307,28 @@ export default function ShoppingListPage() {
 
     async function refreshPricesForSelectedStore() {
       const latestBasket = basketRef.current;
-      setLoadingPrices(new Set(latestBasket.map((b) => b.itemCode)));
 
-      const updated = await Promise.all(
-        latestBasket.map(async (item) => {
+      // Only fetch items that don't already have a price for this store.
+      // This prevents all items from spinning whenever a single item is added.
+      // When the store changes, every item's storeId is stale so all are included.
+      const itemsToFetch = latestBasket.filter(
+        (item) => !item.price || item.storeId !== storeIdNum,
+      );
+
+      if (!itemsToFetch.length) {
+        setLoadingPrices(new Set());
+        return;
+      }
+
+      setLoadingPrices(new Set(itemsToFetch.map((b) => b.itemCode)));
+
+      const fetchedEntries = await Promise.all(
+        itemsToFetch.map(async (item) => {
           try {
             const row = await getProductPriceInStore(item.itemCode, storeIdNum);
-            return {
-              ...item,
-              price: row.price,
-              storeId: row.storeId,
-            };
+            return [item.itemCode, { price: row.price, priceUpdateDate: row.priceUpdateDate, storeId: row.storeId }] as const;
           } catch {
-            return {
-              ...item,
-              price: undefined,
-              storeId: storeIdNum,
-            };
+            return [item.itemCode, { price: undefined as string | undefined, priceUpdateDate: undefined as string | undefined, storeId: storeIdNum }] as const;
           }
         }),
       );
@@ -281,6 +336,12 @@ export default function ShoppingListPage() {
       if (cancelled) return;
 
       setLoadingPrices(new Set());
+
+      const fetchedMap = new Map(fetchedEntries);
+      const updated = latestBasket.map((item) => {
+        const fetched = fetchedMap.get(item.itemCode);
+        return fetched ? { ...item, ...fetched } : item;
+      });
 
       const changed = updated.some(
         (u, idx) =>
@@ -299,7 +360,7 @@ export default function ShoppingListPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedStoreId, basketItemCodesKey]);
+  }, [selectedStoreId, basketItemCodesKey, storeHydrated]);
 
   // Debounced search
   const doSearch = useCallback(async (q: string, storeId: string) => {
@@ -340,14 +401,27 @@ export default function ShoppingListPage() {
   }, [query, selectedStoreId, doSearch]);
 
   const addToBasket = (product: Product) => {
-    if (basket.some((b) => b.itemCode === product.itemCode)) return;
+    let updated: BasketItem[];
 
-    const newItem: BasketItem = {
-      itemCode: product.itemCode,
-      itemName: product.itemName,
-    };
+    if (replacingItemCode) {
+      // Replace mode: swap the no-price item with the selected product
+      if (
+        basket.some(
+          (b) => b.itemCode === product.itemCode && b.itemCode !== replacingItemCode,
+        )
+      )
+        return;
+      updated = basket.map((b) =>
+        b.itemCode === replacingItemCode
+          ? { itemCode: product.itemCode, itemName: product.itemName, qty: b.qty ?? 1, unitQty: (product as { unitQty?: string }).unitQty, priceUpdateDate: (product as { priceUpdateDate?: string }).priceUpdateDate }
+          : b,
+      );
+      setReplacingItemCode(null);
+    } else {
+      if (basket.some((b) => b.itemCode === product.itemCode)) return;
+      updated = [...basket, { itemCode: product.itemCode, itemName: product.itemName, qty: 1, unitQty: (product as { unitQty?: string }).unitQty, priceUpdateDate: (product as { priceUpdateDate?: string }).priceUpdateDate }];
+    }
 
-    const updated = [...basket, newItem];
     setBasket(updated);
     saveBasket(updated);
     setShowResults(false);
@@ -360,9 +434,44 @@ export default function ShoppingListPage() {
     saveBasket(updated);
   };
 
+  const updateQty = (itemCode: string, newQty: number) => {
+    if (newQty < 1) {
+      removeFromBasket(itemCode);
+      return;
+    }
+    const updated = basket.map((b) =>
+      b.itemCode === itemCode ? { ...b, qty: newQty } : b,
+    );
+    setBasket(updated);
+    saveBasket(updated);
+  };
+
+  const copyBasketToClipboard = () => {
+    const storeName = selectedStore
+      ? `${selectedStore.chain.chainName} / ${selectedStore.storeName}`
+      : null;
+
+    const lines = basket.map((item) => {
+      const qty = item.qty ?? 1;
+      const price = item.price
+        ? `₪${parseFloat(item.price).toFixed(2)} ${item.unitQty ?? 'י"ח'}`
+        : "מחיר לא זמין";
+      return `${item.itemName} - ×${qty} - ${price}`;
+    });
+
+    const header = storeName ? `סל קניות ב${storeName}:\n` : "סל קניות:\n";
+    const text = header + lines.join("\n");
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => { });
+  };
+
   const total = basket.reduce((sum, item) => {
     const p = parseFloat(item.price ?? "0");
-    return sum + (Number.isNaN(p) ? 0 : p);
+    const q = item.qty ?? 1;
+    return sum + (Number.isNaN(p) ? 0 : p * q);
   }, 0);
 
   const selectedStore = stores.find((s) => s.id === parseInt(selectedStoreId, 10));
@@ -384,50 +493,133 @@ export default function ShoppingListPage() {
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">סל קניות</h2>
-                {selectedStore && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <StoreIcon className="size-3" />
-                    {selectedStore.chain.chainName} / {selectedStore.storeName}
-                  </span>
-                )}
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold">סל קניות</h2>
+                  {selectedStore && (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <StoreIcon className="size-3" />
+                      {selectedStore.chain.chainName} / {selectedStore.storeName}
+                    </span>
+                  )}
+                </div>
+                {/* Copy to clipboard */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                  onClick={copyBasketToClipboard}
+                >
+                  {copied ? (
+                    <Check className="size-3 text-green-500" />
+                  ) : (
+                    <Copy className="size-3" />
+                  )}
+                  {copied ? "הועתק!" : "העתק"}
+                </Button>
               </div>
               {/* Basket list */}
               <div className="overflow-hidden rounded-xl border border-border">
-                {basket.map((item, idx) => (
-                  <div key={item.itemCode}>
-                    {idx > 0 && <Separator />}
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{item.itemName}</p>
-                        <p className="font-mono text-xs text-muted-foreground">
-                          {item.itemCode}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        {loadingPrices.has(item.itemCode) ? (
-                          <Loader2 className="size-3 animate-spin text-muted-foreground" />
-                        ) : item.price ? (
-                          <Badge variant="secondary" className="font-mono">
-                            ₪{parseFloat(item.price).toFixed(2)}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            ללא מחיר
-                          </span>
-                        )}
+                {basket.map((item, idx) => {
+                  const notFoundInStore =
+                    !!selectedStoreId &&
+                    !loadingPrices.has(item.itemCode) &&
+                    !item.price;
+                  const handleSearchForItem = () => {
+                    setReplacingItemCode(item.itemCode);
+                    setQuery(item.itemName);
+                    inputRef.current?.focus();
+                  };
+
+                  return (
+                    <div key={item.itemCode}>
+                      {idx > 0 && <Separator />}
+                      <div
+                        className={`flex items-center ${notFoundInStore ? " bg-amber-500/5" : ""}`}
+                      >
+                        {/* Qty stepper panel — right edge (first in DOM = visually right in RTL) */}
+                        <div className="flex flex-col items-center justify-center border-l px-2 py-1 gap-0.5 min-w-9">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => updateQty(item.itemCode, (item.qty ?? 1) + 1)}
+                            className="text-muted-foreground h-6 w-7"
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                          <span className="text-sm tabular-nums font-medium leading-none">{item.qty ?? 1}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => updateQty(item.itemCode, (item.qty ?? 1) - 1)}
+                            className="text-muted-foreground h-6 w-7"
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                        </div>
+                        {/* Main content */}
+                        <div className="flex flex-1 flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+                          <div
+                            className={`sm:min-w-0 sm:flex-1${notFoundInStore ? " cursor-pointer" : ""}`}
+                            onClick={notFoundInStore ? handleSearchForItem : undefined}
+                          >
+                            <p
+                              className={`text-sm font-medium leading-snug wrap-break-word sm:truncate${notFoundInStore ? " text-muted-foreground" : ""}`}
+                            >
+                              {item.itemName}
+                            </p>
+                            {notFoundInStore && (
+                              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+                                המוצר לא נמצא בחנות הנבחרת
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
+                            <div className="flex-1 sm:flex-none">
+                              {loadingPrices.has(item.itemCode) ? (
+                                <Loader2 className="size-3 animate-spin text-muted-foreground" />
+                              ) : item.price ? (
+                                <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 sm:flex-col sm:items-end sm:gap-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="secondary" className="font-mono">
+                                      ₪{parseFloat(item.price).toFixed(2)}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">{item.unitQty ?? 'י"ח'}</span>
+                                  </div>
+                                  {item.priceUpdateDate && (
+                                    <span className="text-xs text-muted-foreground/70">
+                                      <span className="hidden sm:inline">עודכן לאחרונה בתאריך: </span>
+                                      {new Date(item.priceUpdateDate).toLocaleDateString("he-IL", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : notFoundInStore ? (
+                                <button
+                                  onClick={handleSearchForItem}
+                                  className="flex items-center gap-1 text-xs text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 cursor-pointer"
+                                >
+                                  <AlertTriangle className="size-3" />
+                                  <span>החלף</span>
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => removeFromBasket(item.itemCode)}
-                          className="text-muted-foreground hover:text-destructive"
+                          className="text-muted-foreground hover:text-destructive shrink-0"
                         >
                           <X className="size-3.5" />
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -451,7 +643,11 @@ export default function ShoppingListPage() {
               <>
                 <div className="max-h-72 overflow-y-auto overscroll-contain touch-pan-y">
                   {results.map((product, idx) => {
-                    const inBasket = basket.some((b) => b.itemCode === product.itemCode);
+                    const inBasket = basket.some(
+                      (b) =>
+                        b.itemCode === product.itemCode &&
+                        b.itemCode !== replacingItemCode,
+                    );
                     return (
                       <div key={product.itemCode}>
                         {idx > 0 && <Separator />}
@@ -460,17 +656,22 @@ export default function ShoppingListPage() {
                           onClick={() => addToBasket(product)}
                           disabled={inBasket}
                         >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{product.itemName}</p>
-                            <p className="font-mono text-xs text-muted-foreground">
-                              {product.itemCode}
-                            </p>
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium">{product.itemName}</p>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {product.price && (
+                              <div className="flex items-center gap-1">
+                                <Badge variant="secondary" className="font-mono">
+                                  ₪{parseFloat(product.price).toFixed(2)}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">{product.unitQty ?? 'י"ח'}</span>
+                              </div>
+                            )}
+                            {inBasket && (
+                              <Badge variant="outline" className="text-xs">
+                                בסל
+                              </Badge>
+                            )}
                           </div>
-                          {inBasket && (
-                            <Badge variant="outline" className="shrink-0 text-xs">
-                              בסל
-                            </Badge>
-                          )}
                         </button>
                       </div>
                     );
@@ -571,6 +772,7 @@ export default function ShoppingListPage() {
                 onClick={() => {
                   setQuery("");
                   setShowResults(false);
+                  setReplacingItemCode(null);
                   inputRef.current?.focus();
                 }}
               >
