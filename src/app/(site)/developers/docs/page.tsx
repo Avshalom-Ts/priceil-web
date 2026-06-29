@@ -264,7 +264,7 @@ export default function DocsPage() {
               </tr>
               <tr>
                 <td className="px-4 py-2.5" dir="ltr">404</td>
-                <td className="px-4 py-2.5">ישות לא נמצאה</td>
+                <td className="px-4 py-2.5">שאילתה לא נמצאה</td>
                 <td className="px-4 py-2.5 text-muted-foreground">הציגו fallback ברור למשתמש במקום כשל כללי.</td>
               </tr>
               <tr>
@@ -294,6 +294,7 @@ export default function DocsPage() {
 
     const backoffMs = (2 ** attempt) * 250 + Math.floor(Math.random() * 150);
     await new Promise((r) => setTimeout(r, backoffMs));
+    attempt += 1;
     attempt += 1;
   }
 

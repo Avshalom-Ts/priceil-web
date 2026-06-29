@@ -119,14 +119,14 @@ export default function BasketDocsPage() {
           <h2 className="text-lg font-semibold">שדות תגובה</h2>
           <FieldTable
             rows={[
-              { field: "storeId", type: "number", description: "מזהה פנימי של הסניף." },
-              { field: "storeName", type: "string", description: "שם הסניף." },
-              { field: "chain", type: "string", description: "שם הרשת של הסניף." },
-              { field: "city", type: "string", description: "עיר הסניף." },
-              { field: "address", type: "string", description: "כתובת הסניף." },
-              { field: "total", type: "number", description: "עלות כוללת של הפריטים שנמצאו (NIS)." },
-              { field: "found", type: "number", description: "כמה פריטים מהבקשה נמצאו בסניף." },
-              { field: "missing", type: "string[]", description: "פריטים שלא נמצאו (ברקוד או group:id)." },
+              { field: "storeId", type: "מספר", description: "מזהה פנימי של הסניף." },
+              { field: "storeName", type: "מחרוזת", description: "שם הסניף." },
+              { field: "chain", type: "מחרוזת", description: "שם הרשת של הסניף." },
+              { field: "city", type: "מחרוזת", description: "עיר הסניף." },
+              { field: "address", type: "מחרוזת", description: "כתובת הסניף." },
+              { field: "total", type: "מספר", description: "עלות כוללת של הפריטים שנמצאו (NIS)." },
+              { field: "found", type: "מספר", description: "כמה פריטים מהבקשה נמצאו בסניף." },
+              { field: "missing", type: "מערך מחרוזות", description: "פריטים שלא נמצאו (ברקוד או group:id)." },
             ]}
           />
         </div>
@@ -160,9 +160,9 @@ export default function BasketDocsPage() {
           <h2 className="text-lg font-semibold">שדות בקשה</h2>
           <FieldTable
             rows={[
-              { field: "storeId", type: "number", required: true, description: "מזהה פנימי של הסניף לחישוב הסל." },
-              { field: "barcodes", type: "string[]", required: false, description: "ברקודים מפורשים להשוואה." },
-              { field: "groupIds", type: "number[]", required: false, description: "קבוצות מוצרים לפי /products/groups." },
+              { field: "storeId", type: "מספר", required: true, description: "מזהה פנימי של הסניף לחישוב הסל." },
+              { field: "barcodes", type: "מערך מחרוזות", required: false, description: "ברקודים מפורשים להשוואה." },
+              { field: "groupIds", type: "מערך מספרים", required: false, description: "קבוצות מוצרים לפי /products/groups." },
             ]}
           />
         </div>
@@ -226,8 +226,8 @@ export default function BasketDocsPage() {
           <FieldTable
             rows={[
               { field: "fallback = null", type: "null", description: "הפריט נמצא ישירות בברקוד בחנות הזאת." },
-              { field: "fallback = name", type: "string", description: "לא נמצא בברקוד, נמצאה התאמה לפי שם בחנות." },
-              { field: "fallback = chain", type: "string", description: "לא נמצא בחנות, המחיר הושאל מסניף אחר באותה רשת." },
+              { field: "fallback = name", type: "מחרוזת", description: "לא נמצא בברקוד, נמצאה התאמה לפי שם בחנות." },
+              { field: "fallback = chain", type: "מחרוזת", description: "לא נמצא בחנות, המחיר הושאל מסניף אחר באותה רשת." },
             ]}
           />
         </div>

@@ -41,10 +41,10 @@ export default function StoresDocsPage() {
           <h2 className="text-lg font-semibold">פרמטרים אפשריים</h2>
           <FieldTable
             rows={[
-              { field: "city", type: "string", required: false, description: "סינון לפי שם עיר או שם סניף (partial match)." },
-              { field: "chain", type: "string", required: false, description: "סינון לפי שם רשת (partial match)." },
-              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
-              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+              { field: "city", type: "מחרוזת", required: false, description: "סינון לפי שם עיר או שם סניף (partial match)." },
+              { field: "chain", type: "מחרוזת", required: false, description: "סינון לפי שם רשת (partial match)." },
+              { field: "page", type: "מספר", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "מספר", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
             ]}
           />
         </div>
@@ -101,21 +101,21 @@ export default function StoresDocsPage() {
           <h2 className="text-lg font-semibold">שדות תגובה — Store</h2>
           <FieldTable
             rows={[
-              { field: "id", type: "number", description: "מזהה פנימי של הסניף במסד הנתונים." },
-              { field: "chainId", type: "string", description: "מזהה רשמי של הרשת." },
-              { field: "subchainId", type: "string", description: "מזהה תת-רשת." },
-              { field: "storeId", type: "string", description: "מזהה הסניף כפי שמדווח על-ידי הרשת." },
-              { field: "subchainName", type: "string", description: "שם תת-הרשת (לרוב שם הרשת הפנימי)." },
-              { field: "storeName", type: "string", description: "שם הסניף לתצוגה." },
-              { field: "storeType", type: "number", description: "סוג הסניף (קוד מספרי)." },
-              { field: "address", type: "string", description: "כתובת הסניף." },
-              { field: "city", type: "string", description: "עיר הסניף." },
-              { field: "zipcode", type: "string", description: "מיקוד." },
-              { field: "lastUpdateDate", type: "string (date)", description: "תאריך עדכון אחרון של נתוני הסניף." },
-              { field: "latitude", type: "string (decimal)", description: "קו רוחב גאוגרפי." },
-              { field: "longitude", type: "string (decimal)", description: "קו אורך גאוגרפי." },
-              { field: "chain.chainId", type: "string", description: "מזהה רשת (מקונן)." },
-              { field: "chain.chainName", type: "string", description: "שם רשת (מקונן)." },
+              { field: "id", type: "מספר", description: "מזהה פנימי של הסניף במסד הנתונים." },
+              { field: "chainId", type: "מחרוזת", description: "מזהה רשמי של הרשת." },
+              { field: "subchainId", type: "מחרוזת", description: "מזהה תת-רשת." },
+              { field: "storeId", type: "מחרוזת", description: "מזהה הסניף כפי שמדווח על-ידי הרשת." },
+              { field: "subchainName", type: "מחרוזת", description: "שם תת-הרשת (לרוב שם הרשת הפנימי)." },
+              { field: "storeName", type: "מחרוזת", description: "שם הסניף לתצוגה." },
+              { field: "storeType", type: "מספר", description: "סוג הסניף (קוד מספרי)." },
+              { field: "address", type: "מחרוזת", description: "כתובת הסניף." },
+              { field: "city", type: "מחרוזת", description: "עיר הסניף." },
+              { field: "zipcode", type: "מחרוזת", description: "מיקוד." },
+              { field: "lastUpdateDate", type: "מחרוזת (תאריך)", description: "תאריך עדכון אחרון של נתוני הסניף." },
+              { field: "latitude", type: "מחרוזת (עשרוני)", description: "קו רוחב גאוגרפי." },
+              { field: "longitude", type: "מחרוזת (עשרוני)", description: "קו אורך גאוגרפי." },
+              { field: "chain.chainId", type: "מחרוזת", description: "מזהה רשת (מקונן)." },
+              { field: "chain.chainName", type: "מחרוזת", description: "שם רשת (מקונן)." },
             ]}
           />
         </div>

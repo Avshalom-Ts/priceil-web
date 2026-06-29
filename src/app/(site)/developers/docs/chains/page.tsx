@@ -74,21 +74,21 @@ export default function ChainsPage() {
                         <tbody className="divide-y divide-border">
                             <tr>
                                 <td className="px-3 py-2 font-mono text-xs">chainId</td>
-                                <td className="px-3 py-2 font-mono text-xs">string</td>
+                                <td className="px-3 py-2 font-mono text-xs">מחרוזת</td>
                                 <td className="px-3 py-2 text-xs text-muted-foreground">
                                     מזהה רשמי של הרשת.
                                 </td>
                             </tr>
                             <tr>
                                 <td className="px-3 py-2 font-mono text-xs">chainName</td>
-                                <td className="px-3 py-2 font-mono text-xs">string</td>
+                                <td className="px-3 py-2 font-mono text-xs">מחרוזת</td>
                                 <td className="px-3 py-2 text-xs text-muted-foreground">
                                     שם רשת קריא למשתמש להצגה ב-UI.
                                 </td>
                             </tr>
                             <tr>
                                 <td className="px-3 py-2 font-mono text-xs">storeCount</td>
-                                <td className="px-3 py-2 font-mono text-xs">number</td>
+                                <td className="px-3 py-2 font-mono text-xs">מספר</td>
                                 <td className="px-3 py-2 text-xs text-muted-foreground">
                                     מספר הסניפים המשויכים לרשת בזמן הבקשה.
                                 </td>

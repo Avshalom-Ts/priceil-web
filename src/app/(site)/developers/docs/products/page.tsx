@@ -5,17 +5,17 @@ import { ApiRequestBar } from "@/components/api-request-bar";
 import Link from "next/link";
 
 const PRODUCT_FIELDS = [
-  { field: "itemCode", type: "string", description: "ברקוד המוצר (מזהה ייחודי)." },
-  { field: "itemName", type: "string", description: "שם המוצר." },
-  { field: "itemType", type: "number", description: "קוד סוג המוצר." },
-  { field: "manufacturerName", type: "string", description: "שם היצרן." },
-  { field: "manufactureCountry", type: "string", description: "ארץ ייצור." },
-  { field: "manufacturerDescription", type: "string", description: "תיאור היצרן." },
-  { field: "unitQty", type: "string", description: "תווית כמות יחידה." },
-  { field: "quantity", type: "string (decimal)", description: "כמות באריזה." },
-  { field: "isWeighted", type: "boolean", description: "האם המוצר נמכר לפי משקל." },
-  { field: "unitOfMeasure", type: "string", description: "יחידת מידה." },
-  { field: "qtyInPackage", type: "number", description: "יחידות באריזה." },
+  { field: "itemCode", type: "מחרוזת", description: "ברקוד המוצר (מזהה ייחודי)." },
+  { field: "itemName", type: "מחרוזת", description: "שם המוצר." },
+  { field: "itemType", type: "מספר", description: "קוד סוג המוצר." },
+  { field: "manufacturerName", type: "מחרוזת", description: "שם היצרן." },
+  { field: "manufactureCountry", type: "מחרוזת", description: "ארץ ייצור." },
+  { field: "manufacturerDescription", type: "מחרוזת", description: "תיאור היצרן." },
+  { field: "unitQty", type: "מחרוזת", description: "תווית כמות יחידה." },
+  { field: "quantity", type: "מחרוזת (עשרוני)", description: "כמות באריזה." },
+  { field: "isWeighted", type: "בוליאני", description: "האם המוצר נמכר לפי משקל." },
+  { field: "unitOfMeasure", type: "מחרוזת", description: "יחידת מידה." },
+  { field: "qtyInPackage", type: "מספר", description: "יחידות באריזה." },
 ];
 
 export default function ProductsDocsPage() {
@@ -52,9 +52,9 @@ export default function ProductsDocsPage() {
           <h2 className="text-lg font-semibold">פרמטרים</h2>
           <FieldTable
             rows={[
-              { field: "q", type: "string", required: false, description: "חיפוש חופשי בשם מוצר." },
-              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
-              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+              { field: "q", type: "מחרוזת", required: false, description: "חיפוש חופשי בשם מוצר." },
+              { field: "page", type: "מספר", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "מספר", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
             ]}
           />
         </div>
@@ -129,10 +129,10 @@ export default function ProductsDocsPage() {
           <h2 className="text-lg font-semibold">פרמטרים</h2>
           <FieldTable
             rows={[
-              { field: "q", type: "string", required: false, description: "חיפוש חופשי בשם מוצר." },
-              { field: "storeId", type: "number", required: true, description: "מזהה פנימי של הסניף (חובה)." },
-              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
-              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+              { field: "q", type: "מחרוזת", required: false, description: "חיפוש חופשי בשם מוצר." },
+              { field: "storeId", type: "מספר", required: true, description: "מזהה פנימי של הסניף (חובה)." },
+              { field: "page", type: "מספר", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "מספר", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
             ]}
           />
         </div>
@@ -388,9 +388,9 @@ export default function ProductsDocsPage() {
           <h2 className="text-lg font-semibold">פרמטרים</h2>
           <FieldTable
             rows={[
-              { field: "q", type: "string", required: false, description: "חיפוש בשם הקבוצה." },
-              { field: "page", type: "number", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
-              { field: "limit", type: "number", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
+              { field: "q", type: "מחרוזת", required: false, description: "חיפוש בשם הקבוצה." },
+              { field: "page", type: "מספר", required: false, description: "מספר עמוד. ברירת מחדל: 1." },
+              { field: "limit", type: "מספר", required: false, description: "תוצאות לעמוד. ברירת מחדל: 20." },
             ]}
           />
         </div>
@@ -459,17 +459,17 @@ export default function ProductsDocsPage() {
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">שדות תגובה</h2>
           <FieldTable rows={[
-            { field: "groupId", type: "number", description: "מזהה קבוצת המוצרים." },
-            { field: "groupName", type: "string", description: "שם הקבוצה המנורמל." },
-            { field: "itemCode", type: "string", description: "הברקוד הספציפי שהסניף נושא." },
-            { field: "itemName", type: "string", description: "שם המוצר כפי שמופיע ברשת." },
-            { field: "price", type: "string (decimal)", description: "המחיר הזמין בסניף בשקלים." },
-            { field: "priceUpdateDate", type: "timestamptz", description: "תאריך עדכון המחיר האחרון." },
-            { field: "storeId", type: "number", description: "מזהה פנימי של הסניף." },
-            { field: "storeName", type: "string", description: "שם הסניף." },
-            { field: "city", type: "string", description: "עיר הסניף." },
-            { field: "address", type: "string", description: "כתובת הסניף." },
-            { field: "chain", type: "string", description: "שם הרשת." },
+            { field: "groupId", type: "מספר", description: "מזהה קבוצת המוצרים." },
+            { field: "groupName", type: "מחרוזת", description: "שם הקבוצה המנורמל." },
+            { field: "itemCode", type: "מחרוזת", description: "הברקוד הספציפי שהסניף נושא." },
+            { field: "itemName", type: "מחרוזת", description: "שם המוצר כפי שמופיע ברשת." },
+            { field: "price", type: "מחרוזת (עשרוני)", description: "המחיר הזמין בסניף בשקלים." },
+            { field: "priceUpdateDate", type: "מחרוזת (תאריך)", description: "תאריך עדכון המחיר האחרון." },
+            { field: "storeId", type: "מספר", description: "מזהה פנימי של הסניף." },
+            { field: "storeName", type: "מחרוזת", description: "שם הסניף." },
+            { field: "city", type: "מחרוזת", description: "עיר הסניף." },
+            { field: "address", type: "מחרוזת", description: "כתובת הסניף." },
+            { field: "chain", type: "מחרוזת", description: "שם הרשת." },
           ]} />
         </div>
 

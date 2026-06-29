@@ -49,7 +49,7 @@ export function FieldTable({
 export function ErrorTable({
     rows = [
         { status: "400", meaning: "פרמטר לא תקין", action: "ולידציה בצד לקוח לפני שליחה." },
-        { status: "404", meaning: "ישות לא נמצאה", action: "הציגו fallback ברור למשתמש." },
+        { status: "404", meaning: "שאילתה לא נמצאה", action: "הציגו fallback ברור למשתמש." },
         { status: "429", meaning: "חריגה ממגבלת קצב", action: "retry עם backoff אקספוננציאלי." },
         { status: "500", meaning: "שגיאת שרת", action: "נסו שוב מאוחר יותר." },
     ],
