@@ -126,7 +126,6 @@ export default function ShoppingListPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [storeFilter, setStoreFilter] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
-  const [storeHydrated, setStoreHydrated] = useState(false);
 
   const [basket, setBasket] = useState<BasketItem[]>([]);
   const [loadingPrices, setLoadingPrices] = useState<Set<string>>(new Set());
@@ -171,26 +170,9 @@ export default function ShoppingListPage() {
     );
   }, []);
 
-  // Load basket and selected store from localStorage on mount.
-  // Pre-populate loadingPrices only for items that are missing a price for the
-  // saved store so items already priced don't flash a spinner.
+  // Load basket from localStorage on mount
   useEffect(() => {
-    const savedBasket = loadBasket();
-    const savedStoreId = loadSelectedStore();
-
-    if (savedStoreId && savedBasket.length) {
-      const savedStoreIdNum = parseInt(savedStoreId, 10);
-      const needsPrice = savedBasket
-        .filter((b) => !b.price || b.storeId !== savedStoreIdNum)
-        .map((b) => b.itemCode);
-      if (needsPrice.length) {
-        setLoadingPrices(new Set(needsPrice));
-      }
-    }
-
-    setBasket(savedBasket);
-    setSelectedStoreId(savedStoreId);
-    setStoreHydrated(true);
+    setBasket(loadBasket());
   }, []);
 
   // Load stores
@@ -287,17 +269,7 @@ export default function ShoppingListPage() {
     if (!currentBasket.length) return;
 
     if (!selectedStoreId) {
-      const hasStoreSpecificData = currentBasket.some((b) => b.price || b.storeId);
-      if (hasStoreSpecificData) {
-        const cleared = currentBasket.map((b) => ({
-          itemCode: b.itemCode,
-          itemName: b.itemName,
-          qty: b.qty ?? 1,
-        }));
-        setBasket(cleared);
-        saveBasket(cleared);
-      }
-      return;
+      return; // No store selected — preserve whatever prices are cached
     }
 
     const storeIdNum = parseInt(selectedStoreId, 10);
@@ -360,7 +332,7 @@ export default function ShoppingListPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedStoreId, basketItemCodesKey, storeHydrated]);
+  }, [selectedStoreId, basketItemCodesKey]);
 
   // Debounced search
   const doSearch = useCallback(async (q: string, storeId: string) => {
@@ -534,7 +506,7 @@ export default function ShoppingListPage() {
                     <div key={item.itemCode}>
                       {idx > 0 && <Separator />}
                       <div
-                        className={`flex items-center ${notFoundInStore ? " bg-amber-500/5" : ""}`}
+                        className={`flex items-stretch${notFoundInStore ? " bg-amber-500/5" : ""}`}
                       >
                         {/* Qty stepper panel — right edge (first in DOM = visually right in RTL) */}
                         <div className="flex flex-col items-center justify-center border-l px-2 py-1 gap-0.5 min-w-9">
@@ -691,7 +663,7 @@ export default function ShoppingListPage() {
         <div className="mx-auto px-4 py-2 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3">
 
           {/* Right side: store controls + location status */}
-          <div className="flex flex-col gap-1 sm:flex-1 sm:max-w-2xl">
+          <div className="flex flex-col gap-1 sm:flex-1">
             <div className="flex">
               <div className="flex-1 sm:flex-0 flex flex-col gap-2">
                 {/* Location status */}
