@@ -4,15 +4,13 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Search,
   X,
-  Loader2,
   LocateFixed,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { BasketSection } from "@/components/shopping-list/basket-section";
+import { SearchResultsPopup } from "@/components/shopping-list/search-results-popup";
 import {
   Select,
   SelectContent,
@@ -606,66 +604,6 @@ export default function ShoppingListPage() {
         </div>
       </div>
 
-      {/* Results popup */}
-      {showResults && (
-        <div className="fixed bottom-40 sm:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-2xl px-4">
-          <div className="overflow-hidden rounded-xl border border-border bg-background shadow-xl">
-            {searching ? (
-              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                מחפש...
-              </div>
-            ) : results.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                לא נמצאו תוצאות
-              </div>
-            ) : (
-              <>
-                <div className="max-h-72 overflow-y-auto overscroll-contain touch-pan-y">
-                  {results.map((product, idx) => {
-                    const inBasket = basket.some(
-                      (b) =>
-                        b.itemCode === product.itemCode &&
-                        b.itemCode !== replacingItemCode,
-                    );
-                    return (
-                      <div key={product.itemCode}>
-                        {idx > 0 && <Separator />}
-                        <button
-                          className="flex w-full items-center gap-3 px-4 py-3 text-right transition-colors hover:bg-muted/50 disabled:opacity-50"
-                          onClick={() => addToBasket(product)}
-                          disabled={inBasket}
-                        >
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium">{product.itemName}</p>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {product.price && (
-                              <div className="flex items-center gap-1">
-                                <Badge variant="secondary" className="font-mono">
-                                  ₪{parseFloat(product.price).toFixed(2)}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">{product.unitQty ?? 'י"ח'}</span>
-                              </div>
-                            )}
-                            {inBasket && (
-                              <Badge variant="outline" className="text-xs">
-                                בסל
-                              </Badge>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
-                  נמצאו {results.length} תוצאות
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
         <div className="mx-auto px-4 py-2 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3">
@@ -770,9 +708,15 @@ export default function ShoppingListPage() {
       </div>
 
       {/* Click-outside overlay */}
-      {showResults && (
-        <div className="fixed inset-0 z-30" onClick={() => setShowResults(false)} />
-      )}
+      <SearchResultsPopup
+        results={results}
+        searching={searching}
+        showResults={showResults}
+        basket={basket}
+        replacingItemCode={replacingItemCode}
+        onSelectProduct={addToBasket}
+        onClose={() => setShowResults(false)}
+      />
     </div>
   );
 }
