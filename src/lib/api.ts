@@ -71,6 +71,14 @@ export interface StoresResult {
   limit: number;
 }
 
+/**
+ * Fetches data from the backend API and unwraps the standard envelope.
+ * @param path - The API endpoint path (e.g., "/products").
+ * @returns A promise that resolves to the unwrapped data of type T.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * apiFetch("/products").then(data => console.log(data));
+ */
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`);
   if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -79,6 +87,16 @@ async function apiFetch<T>(path: string): Promise<T> {
   return (json.data ?? json) as T;
 }
 
+/**
+ * Searches for products by name or barcode.
+ * @param q - The search query (product name or barcode).
+ * @param page - The page number for pagination (default is 1).
+ * @param limit - The number of results per page (default is 20).
+ * @returns A promise that resolves to a SearchProductsResult object containing the search results.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * searchProducts("Milk").then(results => console.log(results));
+ */
 export async function searchProducts(
   q: string,
   page = 1,
@@ -89,6 +107,17 @@ export async function searchProducts(
   );
 }
 
+/**
+ * Searches for products in a specific store by name or barcode.
+ * @param q - The search query (product name or barcode).
+ * @param storeId - The ID of the store to search in.
+ * @param page - The page number for pagination (default is 1).
+ * @param limit - The number of results per page (default is 20).
+ * @returns A promise that resolves to a SearchInStoreResult object containing the search results.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * searchProductsInStore("Milk", 1).then(results => console.log(results));
+ */
 export async function searchProductsInStore(
   q: string,
   storeId: number,
@@ -100,12 +129,29 @@ export async function searchProductsInStore(
   );
 }
 
+/**
+ * Returns the prices of a product across all stores.
+ * @param barcode - The barcode of the product.
+ * @returns A promise that resolves to an object containing the product and its prices in various stores.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * getProductPrices("1234567890123").then(({ product, prices }) => console.log(product, prices));
+ */
 export async function getProductPrices(
   barcode: string,
 ): Promise<{ product: Product; prices: ProductPrice[] }> {
   return apiFetch(`/products/${barcode}/prices`);
 }
 
+/**
+ * Returns the price of a product in a specific store.
+ * @param barcode - The barcode of the product.
+ * @param storeId - The ID of the store.
+ * @returns A promise that resolves to a ProductPrice object.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * getProductPriceInStore("1234567890123", 1).then(price => console.log(price));
+ */
 export async function getProductPriceInStore(
   barcode: string,
   storeId: number,
@@ -113,6 +159,15 @@ export async function getProductPriceInStore(
   return apiFetch(`/products/${barcode}/prices/${storeId}`);
 }
 
+/**
+ * Returns a list of stores, optionally filtered by city and/or chain.
+ * @param city - Optional city name to filter stores.
+ * @param chain - Optional chain name to filter stores.
+ * @returns A promise that resolves to a StoresResult object containing the list of stores.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * getStores("Tel Aviv", "SuperMart").then(stores => console.log(stores));
+ */
 export async function getStores(
   city?: string,
   chain?: string,
@@ -123,6 +178,13 @@ export async function getStores(
   return apiFetch(`/stores?${params.toString()}`);
 }
 
+/**
+ * Returns a list of store chains available in the system.
+ * @returns An array of StoreChain objects.
+ * @throws If the API request fails or returns an error status.
+ * @example
+ * getChains().then(chains => console.log(chains));
+ */
 export async function getChains(): Promise<StoreChain[]> {
   return apiFetch("/stores/chains");
 }

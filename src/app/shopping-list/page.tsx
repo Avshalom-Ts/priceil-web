@@ -38,6 +38,7 @@ import {
 
 const BASKET_KEY = "priceil_basket";
 const STORE_KEY = "priceil_selected_store";
+const STORE_FILTER_KEY = "priceil_store_filter";
 
 function loadSelectedStore(): string {
   try {
@@ -53,6 +54,27 @@ function saveSelectedStore(storeId: string) {
       localStorage.setItem(STORE_KEY, storeId);
     } else {
       localStorage.removeItem(STORE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function loadStoreFilter(): string {
+  try {
+    return localStorage.getItem(STORE_FILTER_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveStoreFilter(value: string) {
+  try {
+    const next = value.trim();
+    if (next) {
+      localStorage.setItem(STORE_FILTER_KEY, next);
+    } else {
+      localStorage.removeItem(STORE_FILTER_KEY);
     }
   } catch {
     // ignore
@@ -77,6 +99,21 @@ interface UserLocation {
 
 interface StoreWithDistance extends Store {
   distanceKm?: number;
+}
+
+function normalizeCity(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/["'`.,\-_/\\]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function citiesMatch(a: string, b: string): boolean {
+  const na = normalizeCity(a);
+  const nb = normalizeCity(b);
+  if (!na || !nb) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
 }
 
 function loadBasket(): BasketItem[] {
@@ -123,7 +160,9 @@ export default function ShoppingListPage() {
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  const [stores, setStores] = useState<Store[]>([]);
+  const [allStores, setAllStores] = useState<Store[]>([]);
+  const [locationCityStores, setLocationCityStores] = useState<Store[]>([]);
+  const [filterApiStores, setFilterApiStores] = useState<Store[]>([]);
   const [storeFilter, setStoreFilter] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
 
@@ -135,6 +174,7 @@ export default function ShoppingListPage() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationAttempted, setLocationAttempted] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -143,12 +183,18 @@ export default function ShoppingListPage() {
   const requestUserLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setLocationError("המכשיר לא תומך בזיהוי מיקום");
+      setLocationCityStores([]);
+      setLocationAttempted(true);
       return;
     }
 
     setLocating(true);
+    setLocationAttempted(false);
     setLocationError(null);
 
+    /**
+     * Get geolocation and set all stores with distance from user location(city).
+     */
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const city = await getCurrentCity(pos.coords.latitude, pos.coords.longitude).catch(() => "");
@@ -157,38 +203,116 @@ export default function ShoppingListPage() {
           longitude: pos.coords.longitude,
           city,
         });
-        getStores(city || undefined)
-          .then((res) => setStores(res.items ?? []))
-          .catch(() => { });
+
+        if (city && city !== "Unknown location") {
+          try {
+            const storeRes = await getStores(city);
+            setLocationCityStores(storeRes.items ?? []);
+          } catch {
+            setLocationCityStores([]);
+            // Ignore city-enrichment failures; full store list is still available.
+          }
+        } else {
+          setLocationCityStores([]);
+        }
+
         setLocating(false);
+        setLocationAttempted(true);
       },
       () => {
         setLocationError("לא התקבלה הרשאה למיקום");
+        setLocationCityStores([]);
         setLocating(false);
+        setLocationAttempted(true);
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 },
     );
   }, []);
+
+  const handleRefreshStoreSelection = useCallback(() => {
+    setSelectedStoreId("");
+    setStoreFilter("");
+    setLocationCityStores([]);
+    saveSelectedStore("");
+    requestUserLocation();
+  }, [requestUserLocation]);
 
   // Load basket from localStorage on mount
   useEffect(() => {
     setBasket(loadBasket());
   }, []);
 
+  // Restore selected store from localStorage on mount
+  useEffect(() => {
+    setSelectedStoreId(loadSelectedStore());
+  }, []);
+
+  // Restore store filter from localStorage on mount
+  useEffect(() => {
+    setStoreFilter(loadStoreFilter());
+  }, []);
+
   // Load stores
   useEffect(() => {
     getStores()
-      .then((res) => setStores(res.items ?? []))
+      .then((res) => {
+        setAllStores(res.items ?? []);
+      })
       .catch(() => { });
   }, []);
+
+  // Persist selected store
+  useEffect(() => {
+    saveSelectedStore(selectedStoreId);
+  }, [selectedStoreId]);
+
+  // Persist store filter
+  useEffect(() => {
+    saveStoreFilter(storeFilter);
+  }, [storeFilter]);
 
   // Try to get user location on first load (can fail silently)
   useEffect(() => {
     requestUserLocation();
   }, [requestUserLocation]);
 
+  // Fetch stores by typed filter (city endpoint) so manual search is not
+  // limited to the first all-stores page.
+  useEffect(() => {
+    const q = storeFilter.trim();
+    if (!q) {
+      setFilterApiStores([]);
+      return;
+    }
+
+    let cancelled = false;
+    getStores(q)
+      .then((res) => {
+        if (cancelled) return;
+        const items = res.items ?? [];
+        setFilterApiStores(items);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFilterApiStores([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storeFilter]);
+
+  // Use a deduped union so manual filter can find city stores that are
+  // missing from the first global stores page.
+  const availableStores = useMemo<Store[]>(() => {
+    const byId = new Map<number, Store>();
+    for (const store of allStores) byId.set(store.id, store);
+    for (const store of locationCityStores) byId.set(store.id, store);
+    return Array.from(byId.values());
+  }, [allStores, locationCityStores]);
+
   const storesSortedByLocation = useMemo<StoreWithDistance[]>(() => {
-    const base = [...stores] as StoreWithDistance[];
+    const base = [...availableStores] as StoreWithDistance[];
 
     if (!userLocation) {
       return base.sort((a, b) => {
@@ -235,24 +359,87 @@ export default function ShoppingListPage() {
     });
 
     return withDistance;
-  }, [stores, userLocation]);
+  }, [availableStores, userLocation]);
 
-  const filteredStores = useMemo(() => {
+  // Auto-select store when no valid selection exists.
+  useEffect(() => {
+    if (selectedStoreId) return;
+    if (!locationAttempted) return;
+    if (availableStores.length === 0) return;
+
+    const locationCity = userLocation?.city ?? "";
+
+    const cityMatch =
+      normalizeCity(locationCity).length > 0
+        ? locationCityStores.find((store) =>
+          citiesMatch(store.city ?? "", locationCity),
+        )
+        : undefined;
+
+    const nextStore = cityMatch ?? locationCityStores[0] ?? storesSortedByLocation[0];
+    if (nextStore) {
+      setSelectedStoreId(String(nextStore.id));
+    }
+  }, [
+    selectedStoreId,
+    storesSortedByLocation,
+    userLocation,
+    locationAttempted,
+    locationCityStores,
+    availableStores.length,
+  ]);
+
+  const listFilteredStores = useMemo<StoreWithDistance[]>(() => {
     const q = storeFilter.trim().toLowerCase();
-    if (!q) return storesSortedByLocation;
+    if (q) {
+      const localMatches = availableStores.filter((s) => {
+        const haystack = [
+          s.storeName ?? "",
+          s.city ?? "",
+          s.address ?? "",
+          s.chain?.chainName ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      });
 
-    return storesSortedByLocation.filter((s) => {
-      const haystack = [
-        s.storeName ?? "",
-        s.city ?? "",
-        s.address ?? "",
-        s.chain?.chainName ?? "",
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [storesSortedByLocation, storeFilter]);
+      // Merge local text matches with API city-filter matches for fuller results.
+      const byId = new Map<number, StoreWithDistance>();
+      for (const s of localMatches) {
+        byId.set(s.id, s as StoreWithDistance);
+      }
+      for (const s of filterApiStores) {
+        byId.set(s.id, s as StoreWithDistance);
+      }
+
+      // Keep currently selected store in list to avoid value flicker while
+      // filtered results are being refreshed.
+      const selectedId = parseInt(selectedStoreId, 10);
+      if (!Number.isNaN(selectedId)) {
+        const selected = availableStores.find((s) => s.id === selectedId);
+        if (selected) {
+          byId.set(selected.id, selected as StoreWithDistance);
+        }
+      }
+
+      return Array.from(byId.values());
+    }
+
+    if (locationCityStores.length > 0 && userLocation) {
+      return locationCityStores as StoreWithDistance[];
+    }
+
+    return storesSortedByLocation;
+  }, [
+    storeFilter,
+    availableStores,
+    filterApiStores,
+    selectedStoreId,
+    storesSortedByLocation,
+    locationCityStores,
+    userLocation,
+  ]);
 
   const basketItemCodesKey = useMemo(
     () => basket.map((b) => b.itemCode).join(","),
@@ -446,7 +633,7 @@ export default function ShoppingListPage() {
     return sum + (Number.isNaN(p) ? 0 : p * q);
   }, 0);
 
-  const selectedStore = stores.find((s) => s.id === parseInt(selectedStoreId, 10));
+  const selectedStore = availableStores.find((s) => s.id === parseInt(selectedStoreId, 10));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -680,7 +867,7 @@ export default function ShoppingListPage() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2.5 text-xs cursor-pointer"
-                    onClick={requestUserLocation}
+                    onClick={handleRefreshStoreSelection}
                     disabled={locating}
                   >
                     {locating ? "מאתר..." : "רענן"}
@@ -701,18 +888,15 @@ export default function ShoppingListPage() {
                       <SelectValue placeholder="בחר חנות..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredStores.length === 0 ? (
+                      {listFilteredStores.length === 0 ? (
                         <div className="px-3 py-2 text-xs text-muted-foreground">
                           לא נמצאו חנויות
                         </div>
                       ) : (
-                        filteredStores.map((store) => (
+                        listFilteredStores.map((store) => (
                           <SelectItem key={store.id} value={String(store.id)}>
                             <span className="text-xs">
                               {store.chain.chainName} / {store.storeName}
-                              {store.distanceKm !== undefined
-                                ? ` · ${store.distanceKm.toFixed(1)} ק"מ`
-                                : ""}
                             </span>
                           </SelectItem>
                         ))
