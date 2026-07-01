@@ -86,6 +86,9 @@ function saveBasket(items: BasketItem[]) {
 export default function ShoppingListPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<Product & { price?: string; priceUpdateDate?: string; unitQty?: string }>>([]);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [searchLimit, setSearchLimit] = useState(20);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -108,6 +111,10 @@ export default function ShoppingListPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const basketRef = useRef<BasketItem[]>([]);
+  const lastSearchContextRef = useRef<{ query: string; storeId: string }>({
+    query: "",
+    storeId: "",
+  });
 
   const requestUserLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -157,6 +164,7 @@ export default function ShoppingListPage() {
   const handleRefreshStoreSelection = useCallback(() => {
     setSelectedStoreId("");
     setStoreFilter("");
+    setSearchPage(1);
     setLocationCityStores([]);
     saveSelectedStore("");
     requestUserLocation();
@@ -416,10 +424,12 @@ export default function ShoppingListPage() {
     };
   }, [selectedStoreId, basketItemCodesKey]);
 
-  // Debounced search
-  const doSearch = useCallback(async (q: string, storeId: string) => {
+  // Debounced for query/store changes, immediate for page changes
+  const doSearch = useCallback(async (q: string, storeId: string, page: number) => {
     if (!q.trim() || q.trim().length < 2) {
       setResults([]);
+      setSearchTotal(0);
+      setSearchPage(1);
       setShowResults(false);
       return;
     }
@@ -429,14 +439,21 @@ export default function ShoppingListPage() {
 
     try {
       if (storeId) {
-        const res = await searchProductsInStore(q, parseInt(storeId, 10));
+        const res = await searchProductsInStore(q, parseInt(storeId, 10), page);
         setResults([...(res.bestMatch ? [res.bestMatch] : []), ...(res.allOthers ?? [])]);
+        setSearchTotal(res.total ?? 0);
+        setSearchPage(res.page ?? page);
+        setSearchLimit(res.limit ?? 20);
       } else {
-        const res = await searchProducts(q);
+        const res = await searchProducts(q, page);
         setResults([...(res.bestMatch ? [res.bestMatch] : []), ...(res.allOthers ?? [])]);
+        setSearchTotal(res.total ?? 0);
+        setSearchPage(res.page ?? page);
+        setSearchLimit(res.limit ?? 20);
       }
     } catch {
       setResults([]);
+      setSearchTotal(0);
     } finally {
       setSearching(false);
     }
@@ -445,14 +462,25 @@ export default function ShoppingListPage() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    debounceRef.current = setTimeout(() => {
-      doSearch(query, selectedStoreId);
-    }, 350);
+    const trimmedQuery = query.trim();
+    const lastContext = lastSearchContextRef.current;
+    const searchContextChanged =
+      lastContext.query !== trimmedQuery || lastContext.storeId !== selectedStoreId;
+
+    lastSearchContextRef.current = { query: trimmedQuery, storeId: selectedStoreId };
+
+    if (searchContextChanged) {
+      debounceRef.current = setTimeout(() => {
+        doSearch(query, selectedStoreId, searchPage);
+      }, 350);
+    } else {
+      doSearch(query, selectedStoreId, searchPage);
+    }
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, selectedStoreId, doSearch]);
+  }, [query, selectedStoreId, searchPage, doSearch]);
 
   const addToBasket = (product: Product) => {
     let updated: BasketItem[];
@@ -543,6 +571,7 @@ export default function ShoppingListPage() {
             onUpdateQty={updateQty}
             onReplaceItem={(itemCode, itemName) => {
               setReplacingItemCode(itemCode);
+              setSearchPage(1);
               setQuery(itemName);
               inputRef.current?.focus();
             }}
@@ -560,15 +589,23 @@ export default function ShoppingListPage() {
         locationError={locationError}
         locating={locating}
         listFilteredStores={listFilteredStores}
-        onQueryChange={setQuery}
+        onQueryChange={(next) => {
+          setSearchPage(1);
+          setQuery(next);
+        }}
         onClearQuery={() => {
           setQuery("");
+          setSearchPage(1);
+          setSearchTotal(0);
           setShowResults(false);
           setReplacingItemCode(null);
           inputRef.current?.focus();
         }}
         onStoreFilterChange={setStoreFilter}
-        onStoreChange={setSelectedStoreId}
+        onStoreChange={(storeId) => {
+          setSearchPage(1);
+          setSelectedStoreId(storeId);
+        }}
         onRefreshStoreSelection={handleRefreshStoreSelection}
         inputRef={inputRef}
       />
@@ -576,11 +613,19 @@ export default function ShoppingListPage() {
       {/* Click-outside overlay */}
       <SearchResultsPopup
         results={results}
+        total={searchTotal}
+        page={searchPage}
+        limit={searchLimit}
         searching={searching}
         showResults={showResults}
         basket={basket}
         replacingItemCode={replacingItemCode}
         onSelectProduct={addToBasket}
+        onPrevPage={() => setSearchPage((prev) => Math.max(1, prev - 1))}
+        onNextPage={() => {
+          const totalPages = Math.max(1, Math.ceil(searchTotal / searchLimit));
+          setSearchPage((prev) => Math.min(totalPages, prev + 1));
+        }}
         onClose={() => setShowResults(false)}
       />
     </div>
