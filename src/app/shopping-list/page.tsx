@@ -4,21 +4,15 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Search,
   X,
-  ShoppingCart,
   Loader2,
-  Store as StoreIcon,
   LocateFixed,
-  AlertTriangle,
-  Copy,
-  Check,
-  Plus,
-  Minus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { BasketSection } from "@/components/shopping-list/basket-section";
 import {
   Select,
   SelectContent,
@@ -35,6 +29,16 @@ import {
   type Store,
   getCurrentCity,
 } from "@/lib/api";
+import {
+  type BasketItem,
+  type StoreWithDistance,
+  type UserLocation,
+  citiesMatch,
+  haversineKm,
+  normalizeCity,
+  toBasketItem,
+  toNum,
+} from "@/lib/shopping-list";
 
 const BASKET_KEY = "priceil_basket";
 const STORE_KEY = "priceil_selected_store";
@@ -81,41 +85,6 @@ function saveStoreFilter(value: string) {
   }
 }
 
-interface BasketItem {
-  itemCode: string;
-  itemName: string;
-  qty: number;
-  price?: string;
-  priceUpdateDate?: string;
-  storeId?: number;
-  unitQty?: string;
-}
-
-interface UserLocation {
-  latitude: number;
-  longitude: number;
-  city: string;
-}
-
-interface StoreWithDistance extends Store {
-  distanceKm?: number;
-}
-
-function normalizeCity(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/["'`.,\-_/\\]/g, " ")
-    .replace(/\s+/g, " ");
-}
-
-function citiesMatch(a: string, b: string): boolean {
-  const na = normalizeCity(a);
-  const nb = normalizeCity(b);
-  if (!na || !nb) return false;
-  return na === nb || na.includes(nb) || nb.includes(na);
-}
-
 function loadBasket(): BasketItem[] {
   try {
     const raw = localStorage.getItem(BASKET_KEY);
@@ -127,31 +96,6 @@ function loadBasket(): BasketItem[] {
 
 function saveBasket(items: BasketItem[]) {
   localStorage.setItem(BASKET_KEY, JSON.stringify(items));
-}
-
-function toNum(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const n = parseFloat(value);
-    return Number.isFinite(n) ? n : null;
-  }
-  return null;
-}
-
-function haversineKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export default function ShoppingListPage() {
@@ -572,13 +516,13 @@ export default function ShoppingListPage() {
         return;
       updated = basket.map((b) =>
         b.itemCode === replacingItemCode
-          ? { itemCode: product.itemCode, itemName: product.itemName, qty: b.qty ?? 1, unitQty: (product as { unitQty?: string }).unitQty, priceUpdateDate: (product as { priceUpdateDate?: string }).priceUpdateDate }
+          ? { ...toBasketItem(product, b.qty ?? 1) }
           : b,
       );
       setReplacingItemCode(null);
     } else {
       if (basket.some((b) => b.itemCode === product.itemCode)) return;
-      updated = [...basket, { itemCode: product.itemCode, itemName: product.itemName, qty: 1, unitQty: (product as { unitQty?: string }).unitQty, priceUpdateDate: (product as { priceUpdateDate?: string }).priceUpdateDate }];
+      updated = [...basket, toBasketItem(product)];
     }
 
     setBasket(updated);
@@ -634,6 +578,9 @@ export default function ShoppingListPage() {
   }, 0);
 
   const selectedStore = availableStores.find((s) => s.id === parseInt(selectedStoreId, 10));
+  const selectedStoreLabel = selectedStore
+    ? `${selectedStore.chain.chainName} / ${selectedStore.storeName}`
+    : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -641,147 +588,21 @@ export default function ShoppingListPage() {
       <div className="flex-1 overflow-y-auto pb-44 sm:pb-28">
         <div className="mx-auto max-w-2xl px-4 pt-8">
 
-          {basket.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
-              <ShoppingCart className="size-12 text-muted-foreground/40" />
-              <p className="text-lg font-medium text-muted-foreground">הסל ריק</p>
-              <p className="text-sm text-muted-foreground/70">
-                חפשו מוצר למטה כדי להוסיף לסל
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold">סל קניות</h2>
-                  {selectedStore && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <StoreIcon className="size-3" />
-                      {selectedStore.chain.chainName} / {selectedStore.storeName}
-                    </span>
-                  )}
-                </div>
-                {/* Copy to clipboard */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1 px-2 text-xs text-muted-foreground"
-                  onClick={copyBasketToClipboard}
-                >
-                  {copied ? (
-                    <Check className="size-3 text-green-500" />
-                  ) : (
-                    <Copy className="size-3" />
-                  )}
-                  {copied ? "הועתק!" : "העתק"}
-                </Button>
-              </div>
-              {/* Basket list */}
-              <div className="overflow-hidden rounded-xl border border-border">
-                {basket.map((item, idx) => {
-                  const notFoundInStore =
-                    !!selectedStoreId &&
-                    !loadingPrices.has(item.itemCode) &&
-                    !item.price;
-                  const handleSearchForItem = () => {
-                    setReplacingItemCode(item.itemCode);
-                    setQuery(item.itemName);
-                    inputRef.current?.focus();
-                  };
-
-                  return (
-                    <div key={item.itemCode}>
-                      {idx > 0 && <Separator />}
-                      <div
-                        className={`flex items-stretch${notFoundInStore ? " bg-amber-500/5" : ""}`}
-                      >
-                        {/* Qty stepper panel — right edge (first in DOM = visually right in RTL) */}
-                        <div className="flex flex-col items-center justify-center border-l px-2 py-1 gap-0.5 min-w-9">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => updateQty(item.itemCode, (item.qty ?? 1) + 1)}
-                            className="text-muted-foreground h-6 w-7"
-                          >
-                            <Plus className="size-3" />
-                          </Button>
-                          <span className="text-sm tabular-nums font-medium leading-none">{item.qty ?? 1}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => updateQty(item.itemCode, (item.qty ?? 1) - 1)}
-                            className="text-muted-foreground h-6 w-7"
-                          >
-                            <Minus className="size-3" />
-                          </Button>
-                        </div>
-                        {/* Main content */}
-                        <div className="flex flex-1 flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
-                          <div
-                            className={`sm:min-w-0 sm:flex-1${notFoundInStore ? " cursor-pointer" : ""}`}
-                            onClick={notFoundInStore ? handleSearchForItem : undefined}
-                          >
-                            <p
-                              className={`text-sm font-medium leading-snug wrap-break-word sm:truncate${notFoundInStore ? " text-muted-foreground" : ""}`}
-                            >
-                              {item.itemName}
-                            </p>
-                            {notFoundInStore && (
-                              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
-                                המוצר לא נמצא בחנות הנבחרת
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
-                            <div className="flex-1 sm:flex-none">
-                              {loadingPrices.has(item.itemCode) ? (
-                                <Loader2 className="size-3 animate-spin text-muted-foreground" />
-                              ) : item.price ? (
-                                <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 sm:flex-col sm:items-end sm:gap-0.5">
-                                  <div className="flex items-center gap-1">
-                                    <Badge variant="secondary" className="font-mono">
-                                      ₪{parseFloat(item.price).toFixed(2)}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">{item.unitQty ?? 'י"ח'}</span>
-                                  </div>
-                                  {item.priceUpdateDate && (
-                                    <span className="text-xs text-muted-foreground/70">
-                                      <span className="hidden sm:inline">עודכן לאחרונה בתאריך: </span>
-                                      {new Date(item.priceUpdateDate).toLocaleDateString("he-IL", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "2-digit",
-                                      })}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : notFoundInStore ? (
-                                <button
-                                  onClick={handleSearchForItem}
-                                  className="flex items-center gap-1 text-xs text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 cursor-pointer"
-                                >
-                                  <AlertTriangle className="size-3" />
-                                  <span>החלף</span>
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => removeFromBasket(item.itemCode)}
-                          className="text-muted-foreground hover:text-destructive shrink-0"
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <BasketSection
+            basket={basket}
+            selectedStoreLabel={selectedStoreLabel}
+            selectedStoreId={selectedStoreId}
+            loadingPrices={loadingPrices}
+            copied={copied}
+            onCopyBasketToClipboard={copyBasketToClipboard}
+            onRemoveFromBasket={removeFromBasket}
+            onUpdateQty={updateQty}
+            onReplaceItem={(itemCode, itemName) => {
+              setReplacingItemCode(itemCode);
+              setQuery(itemName);
+              inputRef.current?.focus();
+            }}
+          />
         </div>
       </div>
 
