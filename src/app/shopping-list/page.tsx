@@ -92,10 +92,10 @@ export default function ShoppingListPage() {
   const [allStores, setAllStores] = useState<Store[]>([]);
   const [locationCityStores, setLocationCityStores] = useState<Store[]>([]);
   const [filterApiStores, setFilterApiStores] = useState<Store[]>([]);
-  const [storeFilter, setStoreFilter] = useState("");
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
+  const [storeFilter, setStoreFilter] = useState(loadStoreFilter);
+  const [selectedStoreId, setSelectedStoreId] = useState(loadSelectedStore);
 
-  const [basket, setBasket] = useState<BasketItem[]>([]);
+  const [basket, setBasket] = useState<BasketItem[]>(loadBasket);
   const [loadingPrices, setLoadingPrices] = useState<Set<string>>(new Set());
   const [replacingItemCode, setReplacingItemCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -121,9 +121,6 @@ export default function ShoppingListPage() {
     setLocationAttempted(false);
     setLocationError(null);
 
-    /**
-     * Get geolocation and set all stores with distance from user location(city).
-     */
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const city = await getCurrentCity(pos.coords.latitude, pos.coords.longitude).catch(() => "");
@@ -139,7 +136,6 @@ export default function ShoppingListPage() {
             setLocationCityStores(storeRes.items ?? []);
           } catch {
             setLocationCityStores([]);
-            // Ignore city-enrichment failures; full store list is still available.
           }
         } else {
           setLocationCityStores([]);
@@ -166,22 +162,6 @@ export default function ShoppingListPage() {
     requestUserLocation();
   }, [requestUserLocation]);
 
-  // Load basket from localStorage on mount
-  useEffect(() => {
-    setBasket(loadBasket());
-  }, []);
-
-  // Restore selected store from localStorage on mount
-  useEffect(() => {
-    setSelectedStoreId(loadSelectedStore());
-  }, []);
-
-  // Restore store filter from localStorage on mount
-  useEffect(() => {
-    setStoreFilter(loadStoreFilter());
-  }, []);
-
-  // Load stores
   useEffect(() => {
     getStores()
       .then((res) => {
@@ -190,23 +170,18 @@ export default function ShoppingListPage() {
       .catch(() => { });
   }, []);
 
-  // Persist selected store
   useEffect(() => {
     saveSelectedStore(selectedStoreId);
   }, [selectedStoreId]);
 
-  // Persist store filter
   useEffect(() => {
     saveStoreFilter(storeFilter);
   }, [storeFilter]);
 
-  // Try to get user location on first load (can fail silently)
   useEffect(() => {
     requestUserLocation();
   }, [requestUserLocation]);
 
-  // Fetch stores by typed filter (city endpoint) so manual search is not
-  // limited to the first all-stores page.
   useEffect(() => {
     const q = storeFilter.trim();
     if (!q) {
@@ -218,8 +193,7 @@ export default function ShoppingListPage() {
     getStores(q)
       .then((res) => {
         if (cancelled) return;
-        const items = res.items ?? [];
-        setFilterApiStores(items);
+        setFilterApiStores(res.items ?? []);
       })
       .catch(() => {
         if (cancelled) return;
@@ -231,8 +205,6 @@ export default function ShoppingListPage() {
     };
   }, [storeFilter]);
 
-  // Use a deduped union so manual filter can find city stores that are
-  // missing from the first global stores page.
   const availableStores = useMemo<Store[]>(() => {
     const byId = new Map<number, Store>();
     for (const store of allStores) byId.set(store.id, store);
@@ -267,16 +239,9 @@ export default function ShoppingListPage() {
       if (lat === null || lon === null) return { ...store, distanceKm: undefined };
       return {
         ...store,
-        distanceKm: haversineKm(
-          userLocation.latitude,
-          userLocation.longitude,
-          lat,
-          lon,
-        ),
+        distanceKm: haversineKm(userLocation.latitude, userLocation.longitude, lat, lon),
       };
     });
-
-
 
     withDistance.sort((a, b) => {
       const ad = a.distanceKm;
@@ -290,7 +255,6 @@ export default function ShoppingListPage() {
     return withDistance;
   }, [availableStores, userLocation]);
 
-  // Auto-select store when no valid selection exists.
   useEffect(() => {
     if (selectedStoreId) return;
     if (!locationAttempted) return;
@@ -333,7 +297,6 @@ export default function ShoppingListPage() {
         return haystack.includes(q);
       });
 
-      // Merge local text matches with API city-filter matches for fuller results.
       const byId = new Map<number, StoreWithDistance>();
       for (const s of localMatches) {
         byId.set(s.id, s as StoreWithDistance);
@@ -342,8 +305,6 @@ export default function ShoppingListPage() {
         byId.set(s.id, s as StoreWithDistance);
       }
 
-      // Keep currently selected store in list to avoid value flicker while
-      // filtered results are being refreshed.
       const selectedId = parseInt(selectedStoreId, 10);
       if (!Number.isNaN(selectedId)) {
         const selected = availableStores.find((s) => s.id === selectedId);
@@ -369,6 +330,11 @@ export default function ShoppingListPage() {
     locationCityStores,
     userLocation,
   ]);
+
+  const selectedStore = availableStores.find((s) => s.id === parseInt(selectedStoreId, 10));
+  const selectedStoreLabel = selectedStore
+    ? `${selectedStore.chain.chainName} / ${selectedStore.storeName}`
+    : null;
 
   const basketItemCodesKey = useMemo(
     () => basket.map((b) => b.itemCode).join(","),
@@ -535,9 +501,7 @@ export default function ShoppingListPage() {
   };
 
   const copyBasketToClipboard = () => {
-    const storeName = selectedStore
-      ? `${selectedStore.chain.chainName} / ${selectedStore.storeName}`
-      : null;
+    const storeName = selectedStoreLabel;
 
     const lines = basket.map((item) => {
       const qty = item.qty ?? 1;
@@ -561,11 +525,6 @@ export default function ShoppingListPage() {
     const q = item.qty ?? 1;
     return sum + (Number.isNaN(p) ? 0 : p * q);
   }, 0);
-
-  const selectedStore = availableStores.find((s) => s.id === parseInt(selectedStoreId, 10));
-  const selectedStoreLabel = selectedStore
-    ? `${selectedStore.chain.chainName} / ${selectedStore.storeName}`
-    : null;
 
   return (
     <div className="flex flex-1 flex-col">
