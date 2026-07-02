@@ -2,12 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PATHS = ["/developers/account"];
+const AUTH_REQUIRED_PATHS = ["/developers/account", "/admin"];
+const ADMIN_ONLY_PATHS = ["/admin"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  const isProtected = AUTH_REQUIRED_PATHS.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 
   const response = NextResponse.next();
@@ -35,13 +36,26 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/developers";
+    redirectUrl.pathname = pathname.startsWith("/admin") ? "/" : "/developers";
     return NextResponse.redirect(redirectUrl);
+  }
+
+  const isAdminPath = ADMIN_ONLY_PATHS.some((p) => pathname.startsWith(p));
+  if (isAdminPath) {
+    const { data: adminRole, error: adminRoleError } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (adminRoleError || !adminRole) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/developers/account/:path*"],
+  matcher: ["/developers/account/:path*", "/admin/:path*"],
 };

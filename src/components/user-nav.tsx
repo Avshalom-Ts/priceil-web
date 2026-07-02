@@ -34,6 +34,7 @@ function getInitials(user: User): string {
 export function UserNav() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [adminRole, setAdminRole] = useState<"admin" | "super_admin" | null>(null);
     const pathname = usePathname();
     const router = useRouter();
 
@@ -44,8 +45,24 @@ export function UserNav() {
             setLoading(false);
         });
 
+        // Discover whether the current user has an admin role.
+        // Non-admin users receive a forbidden response and we treat that as null role.
+        fetch("/api/admin/me")
+            .then(async (res) => {
+                if (!res.ok) {
+                    setAdminRole(null);
+                    return;
+                }
+                const body = (await res.json()) as { role?: "admin" | "super_admin" };
+                setAdminRole(body.role ?? null);
+            })
+            .catch(() => setAdminRole(null));
+
         const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
+            if (!session?.user) {
+                setAdminRole(null);
+            }
         });
 
         return () => listener.subscription.unsubscribe();
@@ -93,6 +110,36 @@ export function UserNav() {
                         רשימת קניות
                     </Link>
                 </DropdownMenuItem>
+                {adminRole ? (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/stats" className="w-full cursor-pointer">
+                                סטטיסטיקות המערכת
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/users" className="w-full cursor-pointer">
+                                כל המשתמשים
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/admins" className="w-full cursor-pointer">
+                                כל המנהלים
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/audit" className="w-full cursor-pointer">
+                                יומן ביקורת
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/api-keys" className="w-full cursor-pointer">
+                                מפתחות API
+                            </Link>
+                        </DropdownMenuItem>
+                    </>
+                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={handleSignOut}
