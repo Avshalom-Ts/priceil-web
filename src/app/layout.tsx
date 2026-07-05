@@ -3,7 +3,6 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Footer } from "@/components/footbar";
 import { CookieBanner } from "@/components/cookie-banner";
 
 const rubik = Rubik({

@@ -119,6 +119,11 @@ export function UserNav() {
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
+                            <Link href="/admin/messages" className="w-full cursor-pointer">
+                                הודעות ממשתמשים
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
                             <Link href="/admin/users" className="w-full cursor-pointer">
                                 כל המשתמשים
                             </Link>
