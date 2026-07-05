@@ -6,15 +6,24 @@ import type { ComponentProps, ReactNode } from "react";
 
 type LoginButtonProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
     children?: ReactNode;
+    returnTo?: string;
 };
 
-export function LoginButton({ children = "התחברות", ...props }: LoginButtonProps) {
+function normalizeReturnPath(path: string | undefined): string {
+    if (!path) return "/";
+    if (!path.startsWith("/") || path.startsWith("//")) return "/";
+    return path;
+}
+
+export function LoginButton({ children = "התחברות", returnTo, ...props }: LoginButtonProps) {
     async function handleSignIn() {
         const supabase = createClient();
+        const currentPath = `${window.location.pathname}${window.location.search}`;
+        const nextPath = normalizeReturnPath(returnTo ?? currentPath);
         await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
             },
         });
     }

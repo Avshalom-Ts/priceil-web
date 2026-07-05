@@ -101,6 +101,11 @@ export function UserNav() {
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                    <Link href="/developers/account/messages" className="w-full cursor-pointer">
+                        ההודעות שלי
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/developers/docs" className="w-full cursor-pointer">
                         השימוש ב - API
                     </Link>

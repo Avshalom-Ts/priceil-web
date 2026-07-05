@@ -1,173 +1,151 @@
-# Admin Management Plan
+# User Messages Plan
 
 ## Goal
 
-Build a dedicated admin console for platform management, separate from user self-service pages, with strict role-based authorization, user statistics visibility, and safe bootstrap of the first super admin.
+Allow signed-in users to send messages to platform admins from `/contact`, store each submission in a `messages` table, and provide an admin inbox under `/admin/messages` with unread-first workflow and status filters.
 
-## Route Decision
+## Product Requirements (Approved)
 
-- Canonical admin route: `/admin`
-- Suggested sub-routes:
-  - `/admin/users`
-  - `/admin/admins`
-  - `/admin/audit`
-  - `/admin/stats`
-  - `/admin/settings`
-- Keep `/developers/account` as user self-service only (apps/keys for the signed-in user).
+1. Only authenticated users can send contact messages.
+1. In `/contact`, user details are auto-filled from the authenticated user profile.
+1. User can edit only:
+1. `subject`
+1. `content`
+1. Submitting creates a new DB row in `messages`.
+1. `/admin/messages` lists unread messages by default.
+1. Opening a message uses `/admin/messages/:id`.
+1. Inbox includes a dropdown filter with:
+1. `unread`
+1. `read`
+1. `all`
 
-## Role Model
+## Data Model (Supabase)
 
-### Roles
+Create `public.messages` with:
 
-- `super_admin`
-  - Full access to all admin features
-  - Can grant/revoke admin roles
-  - Can perform destructive global actions
-- `admin`
-  - Can manage regular users (block/unblock/moderation)
-  - Cannot manage `super_admin` assignments
-- `regular_user`
-  - No admin access
+- `id uuid primary key default gen_random_uuid()`
+- `user_id uuid not null references auth.users(id) on delete cascade`
+- `sender_name text not null`
+- `sender_email text not null`
+- `subject text not null`
+- `content text not null`
+- `status text not null default 'unread' check (status in ('unread', 'read'))`
+- `read_at timestamptz null`
+- `read_by uuid null references auth.users(id)`
+- `created_at timestamptz not null default now()`
+- `updated_at timestamptz not null default now()`
 
-### User Access State
+Recommended indexes:
 
-Introduce user status control for platform enforcement:
+- `idx_messages_status_created_at` on `(status, created_at desc)`
+- `idx_messages_user_id_created_at` on `(user_id, created_at desc)`
 
-- `active`
-- `blocked`
-- `deleted_soft`
+Recommended trigger:
 
-Store reason, actor, and timestamps for all state changes.
+- `set_messages_updated_at` before update to keep `updated_at` current.
 
-## First Super Admin Bootstrap (Approved)
+## Security & Access Rules
 
-Use deterministic SQL seed by trusted email.
+1. Enable RLS on `messages`.
+1. User policy: authenticated user can `insert` only when `user_id = auth.uid()`.
+1. User policy: authenticated user can `select` only their own rows (optional now, useful for future “my messages” page).
+1. Admin access to all rows is done from server routes using service-role Supabase client plus existing `requireAdminApi()` checks.
+1. Never trust client-provided identity fields; server derives `user_id`, `sender_name`, and `sender_email` from session user.
 
-1. Ensure the target user exists in `auth.users`.
-1. Insert their `id` into `admin_users` as `super_admin`.
-1. Make seed idempotent with `ON CONFLICT`.
-1. Record bootstrap action in audit log as `bootstrap_system`.
+## API Surface
 
-## Safety Constraints
+### User endpoint
 
-- Never allow removing the last `super_admin`.
-- Never allow self-demotion if it leaves zero `super_admin` users.
-- Require `super_admin` for role mutation endpoints.
-- Enforce authorization server-side only.
+1. `POST /api/contact/messages`
+1. Auth required (`401` if not signed in).
+1. Body: `{ subject: string; content: string }`.
+1. Server resolves sender identity from `supabase.auth.getUser()` and inserts row with `status='unread'`.
+1. Returns `201` with `{ messageId }`.
 
-## Architecture
+### Admin endpoints
 
-### Database (Supabase)
-
-Add a new migration with:
-
-- `admin_users` table
-  - `user_id uuid primary key references auth.users(id) on delete cascade`
-  - `role text not null check (role in ('admin', 'super_admin'))`
-  - `created_at timestamptz not null default now()`
-  - `created_by uuid null references auth.users(id)`
-- `user_access_state` table
-  - `user_id uuid primary key references auth.users(id) on delete cascade`
-  - `status text not null check (status in ('active', 'blocked', 'deleted_soft'))`
-  - `reason text null`
-  - `changed_by uuid null references auth.users(id)`
-  - `changed_at timestamptz not null default now()`
-- `admin_audit_log` table
-  - `id uuid primary key default gen_random_uuid()`
-  - `actor_user_id uuid null references auth.users(id)`
-  - `action text not null`
-  - `target_user_id uuid null references auth.users(id)`
-  - `metadata jsonb not null default '{}'::jsonb`
-  - `created_at timestamptz not null default now()`
-
-### Authorization Layers
-
-1. Middleware guard for `/admin/:path*`.
-1. API guard for all `/api/admin/*` handlers.
-1. Shared helper functions: `requireAdmin()`, `requireSuperAdmin()`.
-1. Defense in depth: both middleware and handlers must enforce role checks.
-1. Statistics access policy:
-1. Global statistics: `admin` and `super_admin`.
-1. Per-user full statistics: `super_admin` only.
-
-### Admin Statistics Scope
-
-Global statistics in `/admin/stats`:
-
-- total users
-- active users
-- blocked users
-- total requests this month
-- plan distribution (`free`, `basic`, `premium`)
-
-Per-user statistics:
-
-- user monthly request totals
-- app count
-- active key count
-- last key usage timestamp
-
-## API Surface (Admin)
-
-1. `GET /api/admin/users`
-1. `PATCH /api/admin/users/:userId/status`
-1. `DELETE /api/admin/users/:userId` (soft delete by default)
-1. `GET /api/admin/admins`
-1. `POST /api/admin/admins`
-1. `PATCH /api/admin/admins/:userId`
-1. `DELETE /api/admin/admins/:userId`
-1. `GET /api/admin/audit`
-1. `GET /api/admin/stats/global`
-1. `GET /api/admin/stats/users/:userId`
+1. `GET /api/admin/messages?status=unread|read|all&page=1&limit=20`
+1. Returns paginated message list sorted by `created_at desc`.
+1. Default status is `unread`.
+1. `GET /api/admin/messages/:id`
+1. Returns full message details.
+1. `PATCH /api/admin/messages/:id/status`
+1. Body: `{ status: 'unread' | 'read' }`.
+1. When changing to `read`, set `read_at` and `read_by`.
+1. When changing back to `unread`, clear `read_at` and `read_by`.
 
 ## UI/UX Scope
 
-Build admin pages for:
+### Contact page (`/contact`)
 
-1. Users list/search and details
-1. Block/unblock actions
-1. Soft-delete flow and optional hard-delete flow
-1. Admin role management
-1. Audit log explorer
-1. Global statistics dashboard (request volume and usage trends)
-1. Per-user statistics (API calls, key usage, plan consumption)
+1. If not signed in:
+1. Disable message form and show CTA to sign in.
+1. Optional: keep subject/content visible but blocked.
+1. If signed in:
+1. Auto-populate read-only name/email fields.
+1. Editable fields: subject and content only.
+1. Submit to `POST /api/contact/messages`.
+1. Show success/error inline feedback.
 
-All destructive actions require explicit confirmation.
+### Admin inbox (`/admin/messages`)
+
+1. Table columns:
+1. sender
+1. email
+1. subject
+1. created at
+1. status badge
+1. Dropdown filter: unread/read/all (default unread).
+1. Row click navigates to `/admin/messages/:id`.
+1. Empty state for each filter.
+
+### Admin message details (`/admin/messages/:id`)
+
+1. Show full sender info, subject, content, timestamps.
+1. Open detail should mark unread message as read (server-side patch) or provide explicit “mark as read” action.
+1. Include status toggle action (read <-> unread).
+1. Include back link preserving current filter when possible.
 
 ## Implementation Steps (Execution Runbook)
 
-1. Create a new Supabase migration in `supabase/migrations` that adds `admin_users`, `user_access_state`, and `admin_audit_log`.
-1. Enable RLS on new tables and add policies so only service role or approved admin server code can mutate them.
-1. Add bootstrap SQL for first super admin by email (idempotent upsert).
-1. Create shared authz helpers in `src/lib` (for example `src/lib/admin-auth.ts`).
-1. Extend `src/proxy.ts` matcher to include `/admin/:path*` and check session + role.
-1. Add API route group under `src/app/api/admin`.
-1. Implement role guards in every admin handler (`requireAdmin` or `requireSuperAdmin`).
-1. Implement users management endpoints (`list`, `status update`, `soft delete`).
-1. Implement admins management endpoints (`list`, `grant`, `promote`, `revoke`) with last-super-admin protection.
-1. Implement audit endpoint and write audit records on every admin mutation.
-1. Implement stats endpoints:
-1. `GET /api/admin/stats/global` for aggregate metrics.
-1. `GET /api/admin/stats/users/:userId` for per-user metrics.
-1. Build admin page tree under `src/app/(site)/admin` with pages: `page.tsx`, `users/page.tsx`, `admins/page.tsx`, `audit/page.tsx`, `stats/page.tsx`.
-1. Connect UI pages to admin APIs with server-side fetch and clear empty/error states.
-1. Add confirmation dialogs for destructive actions and inline success/error feedback.
-1. Add tests for role checks, last-super-admin protection, and stats visibility rules.
-1. Deploy to staging, seed first super admin, run verification checklist, then promote to production.
+1. Add a new migration in `supabase/migrations` to create `public.messages`, indexes, and `updated_at` trigger.
+1. Enable RLS and add insert/select policies for authenticated users scoped to `auth.uid()`.
+1. Add `POST /api/contact/messages` route under `src/app/api/contact/messages/route.ts`.
+1. Implement auth check with `createSupabaseServerClient()` and derive sender identity from session user metadata and email.
+1. Validate subject/content server-side (required, trim, length limits).
+1. Insert row with default `unread` status and return `201`.
+1. Refactor `src/app/(site)/contact/page.tsx`:
+1. Load current user.
+1. Auto-fill name/email.
+1. Lock name/email as read-only.
+1. Keep only subject/content editable.
+1. Submit to new API route.
+1. Add admin API routes:
+1. `src/app/api/admin/messages/route.ts` for list with status filter.
+1. `src/app/api/admin/messages/[id]/route.ts` for message details.
+1. `src/app/api/admin/messages/[id]/status/route.ts` for status updates.
+1. Guard all admin routes using `requireAdminApi()`.
+1. Implement `/admin/messages` page table UI with status dropdown and pagination.
+1. Implement `/admin/messages/[id]/page.tsx` details view and read/unread toggle.
+1. Ensure details view updates unread->read flow consistently.
+1. Add optional unread counter badge in admin nav (future enhancement if needed).
+1. Add tests for auth gating, contact insert, status filter logic, and mark-read behavior.
+1. Validate in staging: signed-out block, signed-in send success, unread list visibility, detail open behavior, status transitions.
 
 ## Verification Checklist
 
-1. Anonymous user cannot access `/admin` or `/api/admin/*`.
-1. Regular signed-in user gets `403` for admin routes/endpoints.
-1. `admin` can perform allowed user-management actions only.
-1. `super_admin` can perform role and destructive operations.
-1. Last-super-admin guard blocks unsafe demotion/removal.
-1. Bootstrap SQL is idempotent (safe to run twice).
-1. Every admin mutation writes a valid audit log row.
-1. Global stats endpoint is accessible to `admin` and `super_admin`.
-1. Per-user stats endpoint is accessible only to `super_admin`.
+1. Signed-out user cannot submit contact messages (`401` from API).
+1. Signed-in user sees auto-filled name/email and can edit only subject/content.
+1. Successful submit creates one `messages` row with `status='unread'`.
+1. `/admin/messages` default view shows unread messages.
+1. Filter dropdown switches correctly between unread/read/all.
+1. `/admin/messages/:id` displays full message details.
+1. Opening or toggling status updates `status`, `read_at`, and `read_by` correctly.
+1. Non-admin users cannot access `/api/admin/messages*`.
+1. Admin inbox handles empty and error states gracefully.
 
-## Notes
+## Open Decisions
 
-- This plan intentionally separates platform administration from developer self-service.
-- Existing `/developers/account` remains unchanged in purpose.
+1. Define max length limits for `subject` and `content`.
+1. Decide whether opening details auto-marks as read or requires explicit action.
+1. Decide whether to support admin reply workflow in this phase (currently out of scope).
