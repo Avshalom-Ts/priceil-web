@@ -119,13 +119,18 @@ export function UserNav() {
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
+                            <Link href="/admin/api-keys" className="w-full cursor-pointer">
+                                מפתחות API
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
                             <Link href="/admin/stats" className="w-full cursor-pointer">
-                                סטטיסטיקות המערכת
+                                סטטיסטיקות
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                             <Link href="/admin/messages" className="w-full cursor-pointer">
-                                הודעות ממשתמשים
+                                הודעות
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
@@ -141,11 +146,6 @@ export function UserNav() {
                         <DropdownMenuItem asChild>
                             <Link href="/admin/audit" className="w-full cursor-pointer">
                                 יומן ביקורת
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/admin/api-keys" className="w-full cursor-pointer">
-                                מפתחות API
                             </Link>
                         </DropdownMenuItem>
                     </>

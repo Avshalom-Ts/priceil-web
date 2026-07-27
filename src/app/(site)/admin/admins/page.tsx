@@ -37,7 +37,6 @@ export default function AdminAdminsPage() {
     const [error, setError] = useState<string | null>(null);
 
     const isSuperAdmin = myRole === "super_admin";
-
     const sortedAdmins = useMemo(
         () => [...admins].sort((a, b) => (a.role === b.role ? 0 : a.role === "super_admin" ? -1 : 1)),
         [admins],
@@ -49,8 +48,8 @@ export default function AdminAdminsPage() {
 
         try {
             const [adminsResponse, meResponse] = await Promise.all([
-                fetch("/api/admin/admins"),
-                fetch("/api/admin/me"),
+                fetch("/api/admin/admins", { cache: "no-store" }),
+                fetch("/api/admin/me", { cache: "no-store" }),
             ]);
 
             const adminsBody = (await adminsResponse.json()) as { items?: AdminItem[]; error?: string };
@@ -83,7 +82,6 @@ export default function AdminAdminsPage() {
     async function handleCreateOrPromote(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!isSuperAdmin) return;
-
         setIsSaving(true);
         setError(null);
 
@@ -114,7 +112,6 @@ export default function AdminAdminsPage() {
 
     async function updateRole(userId: string, role: AdminRole) {
         if (!isSuperAdmin) return;
-
         setError(null);
         setIsSaving(true);
 
@@ -141,7 +138,6 @@ export default function AdminAdminsPage() {
 
     async function removeAdmin(userId: string) {
         if (!isSuperAdmin) return;
-
         setError(null);
         setIsSaving(true);
 
@@ -154,6 +150,10 @@ export default function AdminAdminsPage() {
 
             const body = (await response.json()) as { error?: string };
             if (!response.ok) {
+                if (response.status === 404) {
+                    // Keep UI in sync when the row is already gone server-side.
+                    await load();
+                }
                 throw new Error(body.error ?? "ביטול הרשאה נכשל");
             }
 
@@ -170,9 +170,7 @@ export default function AdminAdminsPage() {
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">כל המנהלים</h1>
-                <p className="text-sm text-muted-foreground">
-                    ניהול הרשאות מנהל. רק super_admin יכול לבצע שינויים.
-                </p>
+                <p className="text-sm text-muted-foreground">ניהול כל המנהלים במערכת.</p>
             </header>
 
             {myRole === "admin" ? (
@@ -181,7 +179,7 @@ export default function AdminAdminsPage() {
                 </div>
             ) : null}
 
-            <form onSubmit={handleCreateOrPromote} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[2fr_1fr_auto]">
+            <form onSubmit={handleCreateOrPromote} className="grid gap-3 rounded-lg border p-4 items-end sm:grid-cols-[2fr_1fr_auto]">
                 <label className="flex flex-col gap-1 text-sm">
                     אימייל משתמש
                     <input
@@ -250,7 +248,7 @@ export default function AdminAdminsPage() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
-                                                className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+                                                className="rounded border px-2 py-1 text-xs disabled:opacity-50 cursor-pointer disabled:cursor-auto"
                                                 onClick={() => updateRole(item.userId, "admin")}
                                                 disabled={!isSuperAdmin || isSaving || item.role === "admin"}
                                             >
@@ -258,7 +256,7 @@ export default function AdminAdminsPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+                                                className="rounded border px-2 py-1 text-xs disabled:opacity-50 cursor-pointer disabled:cursor-auto"
                                                 onClick={() => updateRole(item.userId, "super_admin")}
                                                 disabled={!isSuperAdmin || isSaving || item.role === "super_admin"}
                                             >
@@ -266,7 +264,7 @@ export default function AdminAdminsPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                className="rounded border border-destructive/40 px-2 py-1 text-xs text-destructive disabled:opacity-50"
+                                                className="rounded border border-destructive/40 px-2 py-1 text-xs text-destructive disabled:opacity-50 cursor-pointer disabled:cursor-auto"
                                                 onClick={() => removeAdmin(item.userId)}
                                                 disabled={!isSuperAdmin || isSaving}
                                             >

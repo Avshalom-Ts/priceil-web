@@ -208,19 +208,66 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!body.userId) {
+  const targetUserId = body.userId?.trim();
+
+  if (!targetUserId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const adminClient = createSupabaseAdminClient();
 
-  const { error: deleteError } = await adminClient
+  const { data: existingAdmin, error: existingAdminError } = await adminClient
+    .from("admin_users")
+    .select("user_id, role")
+    .eq("user_id", targetUserId)
+    .maybeSingle();
+
+  if (existingAdminError) {
+    return NextResponse.json(
+      { error: existingAdminError.message },
+      { status: 400 },
+    );
+  }
+
+  if (!existingAdmin) {
+    return NextResponse.json(
+      { error: "Admin user not found or already removed" },
+      { status: 404 },
+    );
+  }
+
+  const { data: deletedRows, error: deleteError } = await adminClient
     .from("admin_users")
     .delete()
-    .eq("user_id", body.userId);
+    .eq("user_id", targetUserId)
+    .select("user_id");
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 400 });
+  }
+
+  if (!deletedRows || deletedRows.length === 0) {
+    return NextResponse.json(
+      { error: "Admin user not found or already removed" },
+      { status: 404 },
+    );
+  }
+
+  const { data: stillExists, error: verifyError } = await adminClient
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", targetUserId)
+    .maybeSingle();
+
+  if (verifyError) {
+    return NextResponse.json({ error: verifyError.message }, { status: 400 });
+  }
+
+  if (stillExists) {
+    return NextResponse.json(
+      { error: "Admin removal did not persist" },
+      { status: 409 },
+    );
   }
 
   const { error: auditError } = await adminClient
@@ -228,7 +275,7 @@ export async function DELETE(request: Request) {
     .insert({
       actor_user_id: auth.data.user.id,
       action: "admin_remove_admin_role",
-      target_user_id: body.userId,
+      target_user_id: targetUserId,
       metadata: {},
     });
 
@@ -236,5 +283,5 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: auditError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, removedUserId: targetUserId });
 }

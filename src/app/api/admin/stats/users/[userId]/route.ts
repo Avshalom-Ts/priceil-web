@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAuthUserById } from "@/lib/supabase/admin-users";
 
 type RouteContext = {
   params: Promise<{ userId: string }>;
@@ -13,8 +14,20 @@ export async function GET(_request: Request, context: RouteContext) {
   const { userId } = await context.params;
   const adminClient = createSupabaseAdminClient();
 
+  let user;
+  try {
+    user = await getAuthUserById(adminClient, userId);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load auth user";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
   const [
-    userResult,
     planResult,
     statusResult,
     usageHistoryResult,
@@ -22,13 +35,6 @@ export async function GET(_request: Request, context: RouteContext) {
     activeKeysCountResult,
     lastActivityResult,
   ] = await Promise.all([
-    adminClient
-      .schema("auth")
-      .from("users")
-      .select("id, email, created_at")
-      .eq("id", userId)
-      .maybeSingle(),
-
     adminClient
       .from("user_plans")
       .select("plan, monthly_limit")
@@ -70,7 +76,6 @@ export async function GET(_request: Request, context: RouteContext) {
   ]);
 
   const error =
-    userResult.error ||
     planResult.error ||
     statusResult.error ||
     usageHistoryResult.error ||
@@ -82,12 +87,8 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (!userResult.data) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
   return NextResponse.json({
-    user: userResult.data,
+    user,
     role: auth.data.role,
     plan: planResult.data,
     accessState: statusResult.data ?? {

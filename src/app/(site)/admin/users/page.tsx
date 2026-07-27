@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">ניהול משתמשים</h1>
-                <p className="text-sm text-muted-foreground">חסימה, ביטול חסימה ומחיקה רכה של משתמשים.</p>
+                <p className="text-sm text-muted-foreground">ניהול כל המשתמשים במערכת.</p>
             </header>
 
             <section className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[1fr_1fr]">
@@ -190,11 +190,9 @@ export default function AdminUsersPage() {
                                 <tr key={user.userId} className="border-t align-top">
                                     <td className="px-3 py-2">
                                         <div className="font-medium">{user.email ?? "-"}</div>
-                                        <div className="text-xs text-muted-foreground">{user.userId}</div>
                                     </td>
                                     <td className="px-3 py-2">
                                         <div>{user.plan}</div>
-                                        <div className="text-xs text-muted-foreground">monthly_limit: {user.monthlyLimit}</div>
                                     </td>
                                     <td className="px-3 py-2">{user.monthRequests}</td>
                                     <td className="px-3 py-2">

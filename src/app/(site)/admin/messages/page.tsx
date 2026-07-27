@@ -126,9 +126,9 @@ export default function AdminMessagesPage() {
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">הודעות ממשתמשים</h1>
+                    <h1 className="text-2xl font-bold">הודעות</h1>
                     <p className="text-sm text-muted-foreground">
-                        ברירת המחדל היא הודעות שלא נקראו.
+                        כל ההודעות  מהמשתמשים.
                     </p>
                 </div>
                 <div className="w-44">
@@ -189,8 +189,8 @@ export default function AdminMessagesPage() {
                                     <td className="px-3 py-2">
                                         <span
                                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${item.status === "unread"
-                                                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                                                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                                : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                                                 }`}
                                         >
                                             {item.status === "unread" ? "לא נקראה" : "נקראה"}

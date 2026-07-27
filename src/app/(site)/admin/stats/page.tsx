@@ -82,7 +82,7 @@ export default async function AdminStatsPage() {
     return (
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold">סטטיסטיקות האפליקצייה</h1>
+                <h1 className="text-2xl font-bold">סטטיסטיקות</h1>
                 <p className="text-sm text-muted-foreground">מדדים גלובליים של האפליקציה.</p>
             </header>
 
