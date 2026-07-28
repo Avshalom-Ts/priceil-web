@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.priceil.dev";
+const API_KEY = process.env.PRICEIL_APP_API_KEY;
 
 function buildUpstream(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path") ?? "/";
   const qs = searchParams.get("qs") ?? "";
   return `${API_BASE}${path}${qs ? `?${qs}` : ""}`;
+}
+
+function buildHeaders(): HeadersInit {
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (API_KEY) headers["x-api-key"] = API_KEY;
+  return headers;
 }
 
 async function parseUpstreamBody(res: Response) {
@@ -25,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(upstream, {
-      headers: { "Content-Type": "application/json" },
+      headers: buildHeaders(),
       cache: "no-store",
     });
     const body = await parseUpstreamBody(res);
@@ -51,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const res = await fetch(upstream, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildHeaders(),
       body: JSON.stringify(upstreamBody),
       cache: "no-store",
     });
