@@ -95,10 +95,10 @@ export default function ShoppingListPage() {
   const [allStores, setAllStores] = useState<Store[]>([]);
   const [locationCityStores, setLocationCityStores] = useState<Store[]>([]);
   const [filterApiStores, setFilterApiStores] = useState<Store[]>([]);
-  const [storeFilter, setStoreFilter] = useState(loadStoreFilter);
-  const [selectedStoreId, setSelectedStoreId] = useState(loadSelectedStore);
+  const [storeFilter, setStoreFilter] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState("");
 
-  const [basket, setBasket] = useState<BasketItem[]>(loadBasket);
+  const [basket, setBasket] = useState<BasketItem[]>([]);
   const [loadingPrices, setLoadingPrices] = useState<Set<string>>(new Set());
   const [replacingItemCode, setReplacingItemCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -176,6 +176,15 @@ export default function ShoppingListPage() {
         setAllStores(res.items ?? []);
       })
       .catch(() => { });
+  }, []);
+
+  // localStorage is only available on the client. Reading it during the lazy
+  // useState initializer would make the SSR-ed HTML mismatch the client's
+  // first render (hydration error), so it's loaded here after mount instead.
+  useEffect(() => {
+    setStoreFilter(loadStoreFilter());
+    setSelectedStoreId(loadSelectedStore());
+    setBasket(loadBasket());
   }, []);
 
   useEffect(() => {
