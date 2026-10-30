@@ -10,6 +10,7 @@ Hebrew-first frontend for PriceIL, a platform for searching supermarket products
 - Developer documentation and interactive API examples.
 - Google sign-in through Supabase Auth, developer accounts, registered apps, API key creation/revocation, and usage information.
 - Admin tools for users, API keys, roles, usage statistics, audit history, and contact messages/replies.
+- Admin catalog table browser with search, pagination, row editing, and deletion at `/admin/database`.
 - Contact form, account message inbox, privacy and terms pages, cookie notice, and light/dark themes.
 - Hebrew RTL layout (`lang="he"`, `dir="rtl"`) and Rubik typography.
 
@@ -80,6 +81,10 @@ Open [http://localhost:3000](http://localhost:3000). The backend must use a diff
 | `API_PROXY_TARGET`              | Preferred upstream for `/backend-api/*` and developer route discovery.                                 |
 | `NEXT_PUBLIC_API_URL`           | Fallback upstream for `/backend-api/*`; also configures the separate `/api/proxy` playground endpoint. |
 | `PRICEIL_APP_API_KEY`           | Optional `x-api-key` attached server-side by both API proxies.                                         |
+| `ADMIN_API_TARGET`             | Server-only direct NestJS origin on Proxmox for authenticated catalog admin calls; falls back to `API_PROXY_TARGET`, then `NEXT_PUBLIC_API_URL`. |
+| `ADMIN_WEB_ORIGIN`             | Optional public web origin for same-origin mutation checks behind a reverse proxy. |
+
+See [Admin database setup](docs/ADMIN_DATABASE.md) for Proxmox connectivity, authentication, editor behavior, and verification.
 
 Set both API URL variables to the same backend if the shopping list and documentation playground should use the same instance. The current defaults differ:
 
