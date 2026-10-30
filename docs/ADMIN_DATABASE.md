@@ -49,8 +49,10 @@ Browser calls go to dedicated Next routes:
 | `/api/admin/database/[table]/[id]` | GET, PATCH, DELETE | `/admin/database/:table/:id` |
 
 Every request verifies the user with the existing `requireAdminApi()` helper.
-After that verification, the server obtains the matching session's access token
-and forwards it as Bearer authorization. NestJS independently validates that token
+After that verification, the server reads only the stored session's access token,
+validates its identity with `getUser(token)`, checks it matches the authenticated
+admin, and forwards it as Bearer authorization. The stored `session.user` is never
+used as an authenticated identity. NestJS independently validates that token
 and current membership. Browser-supplied authorization/role headers, cookies,
 service credentials, and the shared paid API key are not forwarded upstream.
 Public route discovery and the public proxy have no new admin capabilities.

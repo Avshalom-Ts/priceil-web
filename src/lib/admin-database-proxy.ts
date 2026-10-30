@@ -189,12 +189,13 @@ export async function forwardAdminDatabase(
       data: { session },
       error,
     } = await supabase.auth.getSession();
-    // getSession is used only after requireAdminApi verified the user with getUser.
-    if (
-      error ||
-      !session?.access_token ||
-      session.user.id !== auth.data.user.id
-    )
+    // Read only the token from storage; session.user is not an authenticated identity.
+    if (error || !session?.access_token) return problem(401, "יש להתחבר מחדש");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(session.access_token);
+    if (userError || !user || user.id !== auth.data.user.id)
       return problem(401, "יש להתחבר מחדש");
     accessToken = session.access_token;
   } catch {
